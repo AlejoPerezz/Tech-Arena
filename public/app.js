@@ -67,6 +67,8 @@ const translations = {
     correctAnswer: "Correct answer",
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
+    whyCorrect: "Why it was correct",
+    whyChosen: "Why your choice",
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
   es: {
@@ -93,6 +95,8 @@ const translations = {
     correctAnswer: "Respuesta correcta",
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
+    whyCorrect: "Por qué fue correcta",
+    whyChosen: "Por qué elegiste esa",
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
 };
@@ -230,28 +234,33 @@ const renderResults = (payload) => {
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
     )}:</strong> ${selectedLabel}</p><p><strong>${t(
+      "whyChosen"
+    )}:</strong> ${result.explanation}</p><p><strong>${t(
       "correctAnswer"
     )}:</strong> ${correctAnswerText}</p><p><strong>${t(
-      "explanation"
-    )}:</strong> ${correctExplanation}</p><p>${result.outcome}</p><p>${result.explanation}</p><p><strong>${result.points} pts</strong></p>`;
+      "whyCorrect"
+    )}:</strong> ${correctExplanation}</p><p>${result.outcome}</p><p><strong>${result.points} pts</strong></p>`;
     resultsEl.appendChild(item);
   });
   resultsPanel.classList.remove("hidden");
 };
 
-const getRecommendationsForScore = (score, roundsPlayed) => {
+const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => {
   const average = roundsPlayed ? score / roundsPlayed : 0;
+  const percentile = totalPlayers ? (totalPlayers - rank) / totalPlayers : 0;
   if (average >= 6) {
     return state.language === "es"
       ? [
           "Liderazgo en incidentes y postmortems",
           "Patrones de escalabilidad y planificación de capacidad",
           "Ingeniería de confiabilidad avanzada (SLOs, presupuestos de error)",
+          percentile > 0.66 ? "Mentoría técnica y coaching de equipos" : "Diseño de sistemas distribuidos",
         ]
       : [
           "Incident management leadership and postmortems",
           "Scalability design patterns and capacity planning",
           "Advanced reliability engineering (SLOs, error budgets)",
+          percentile > 0.66 ? "Technical mentoring and team coaching" : "Distributed systems design",
         ];
   }
   if (average >= 3) {
@@ -260,11 +269,13 @@ const getRecommendationsForScore = (score, roundsPlayed) => {
           "Profiling y optimización de rendimiento",
           "Indexación de base de datos y planes de consulta",
           "Buenas prácticas de CI/CD y despliegues seguros",
+          percentile > 0.5 ? "Diseño de APIs resilientes" : "Fundamentos de observabilidad",
         ]
       : [
           "Performance profiling and optimization basics",
           "Database indexing and query planning",
           "CI/CD best practices and safe deployments",
+          percentile > 0.5 ? "Resilient API design" : "Observability fundamentals",
         ];
   }
   return state.language === "es"
@@ -272,27 +283,33 @@ const getRecommendationsForScore = (score, roundsPlayed) => {
         "Fundamentos de respuesta a incidentes en producción",
         "Observabilidad básica (logs, métricas, tracing)",
         "Parches de seguridad y gestión de dependencias",
+        percentile > 0.33 ? "Bases de testing automatizado" : "Buenas prácticas de debugging",
       ]
     : [
         "Production incident response fundamentals",
         "Observability basics (logs, metrics, tracing)",
         "Security patching and dependency management",
+        percentile > 0.33 ? "Automated testing basics" : "Debugging best practices",
       ];
 };
 
 const renderFinal = (payload) => {
   finalLeaderboardEl.innerHTML = "";
   finalRecommendationsEl.innerHTML = "";
-  payload.leaderboard
-    .sort((a, b) => b.score - a.score)
-    .forEach((player) => {
+  const sorted = [...payload.leaderboard].sort((a, b) => b.score - a.score);
+  sorted.forEach((player, index) => {
       const item = document.createElement("li");
       item.innerHTML = `<span>${player.name}</span><strong>${player.score}</strong>`;
       finalLeaderboardEl.appendChild(item);
 
       const recommendation = document.createElement("div");
       recommendation.className = "recommendation-item";
-      const topics = getRecommendationsForScore(player.score, payload.roundsPlayed);
+      const topics = getRecommendationsForScore(
+        player.score,
+        payload.roundsPlayed,
+        index + 1,
+        sorted.length
+      );
       recommendation.innerHTML = `<strong>${player.name}</strong><ul>${topics
         .map((topic) => `<li>${topic}</li>`)
         .join("")}</ul>`;
