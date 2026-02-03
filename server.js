@@ -11,6 +11,7 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const MAX_PLAYERS = 10;
 const ROUND_SECONDS = 75;
+const MAX_ROUNDS = 5;
 
 const rootDir = path.resolve();
 const publicDir = path.join(rootDir, "public");
@@ -63,6 +64,8 @@ const createRoomState = (roomCode) => ({
   language: "en",
   scenarioOrder: [],
   scenarioIndex: -1,
+  gameOver: false,
+  maxRounds: MAX_ROUNDS,
 });
 
 const ensureScenarioOrder = (roomState) => {
@@ -103,6 +106,8 @@ const sendRoomState = (roomState) => {
     hostId: roomState.hostId,
     players: serializePlayers(roomState),
     currentRound: roomState.currentRound,
+    maxRounds: roomState.maxRounds,
+    gameOver: roomState.gameOver,
     roundEndsAt: roomState.roundEndsAt,
     scenario: scenario
       ? {
@@ -155,9 +160,24 @@ const endRound = (roomState) => {
   roomState.answers.clear();
   roomState.roundEndsAt = null;
   roomState.inProgress = false;
+
+  if (roomState.currentRound + 1 >= roomState.maxRounds) {
+    roomState.gameOver = true;
+    io.to(roomState.roomCode).emit("room:gameover", {
+      leaderboard: serializePlayers(roomState),
+      roundsPlayed: roomState.currentRound + 1,
+      maxRounds: roomState.maxRounds,
+    });
+  }
 };
 
 const startRound = (roomState) => {
+  if (roomState.gameOver) return;
+  if (roomState.currentRound + 1 >= roomState.maxRounds) {
+    roomState.gameOver = true;
+    sendRoomState(roomState);
+    return;
+  }
   roomState.currentRound += 1;
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
@@ -248,6 +268,24 @@ io.on("connection", (socket) => {
     if (!roomState) return;
     if (!language || !["en", "es"].includes(language)) return;
     roomState.language = language;
+    sendRoomState(roomState);
+  });
+
+  socket.on("room:reset", ({ roomCode }) => {
+    const roomState = rooms.get(roomCode);
+    if (!roomState || roomState.hostId !== socket.id) return;
+    roomState.currentRound = -1;
+    roomState.inProgress = false;
+    roomState.roundEndsAt = null;
+    roomState.answers.clear();
+    roomState.gameOver = false;
+    roomState.scenarioOrder = shuffleArray(
+      scenarios.map((_, index) => index)
+    );
+    roomState.scenarioIndex = -1;
+    for (const playerId of roomState.scores.keys()) {
+      roomState.scores.set(playerId, 0);
+    }
     sendRoomState(roomState);
   });
 

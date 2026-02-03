@@ -214,3 +214,16 @@ input {
 .answers ul {
   margin-top: 8px;
 }
+
+#final-panel {
+  margin-top: 20px;
+}
+
+#final-summary {
+  color: #9fb0ff;
+  margin-bottom: 12px;
+}
+
+#restart-btn {
+  margin-top: 16px;
+}

@@ -3,6 +3,7 @@ const socket = io();
 const joinPanel = document.getElementById("join-panel");
 const roomPanel = document.getElementById("room-panel");
 const resultsPanel = document.getElementById("results-panel");
+const finalPanel = document.getElementById("final-panel");
 const joinBtn = document.getElementById("join-btn");
 const joinError = document.getElementById("join-error");
 const roomTitle = document.getElementById("room-title");
@@ -17,6 +18,9 @@ const submitBtn = document.getElementById("submit-btn");
 const leaderboardEl = document.getElementById("leaderboard");
 const answersEl = document.getElementById("answers");
 const resultsEl = document.getElementById("results");
+const finalSummary = document.getElementById("final-summary");
+const finalLeaderboardEl = document.getElementById("final-leaderboard");
+const restartBtn = document.getElementById("restart-btn");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
 const langEn = document.getElementById("lang-en");
@@ -35,6 +39,8 @@ const state = {
   inProgress: false,
   currentRound: -1,
   selectedOption: null,
+  gameOver: false,
+  maxRounds: 5,
 };
 
 const updateTimer = () => {
@@ -68,6 +74,7 @@ const renderScenario = (scenario) => {
   optionsEl.innerHTML = "";
   answersEl.innerHTML = "";
   resultsPanel.classList.add("hidden");
+  finalPanel.classList.add("hidden");
   preRound.classList.add("hidden");
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
@@ -126,6 +133,19 @@ const renderResults = (payload) => {
   resultsPanel.classList.remove("hidden");
 };
 
+const renderFinal = (payload) => {
+  finalLeaderboardEl.innerHTML = "";
+  payload.leaderboard
+    .sort((a, b) => b.score - a.score)
+    .forEach((player) => {
+      const item = document.createElement("li");
+      item.innerHTML = `<span>${player.name}</span><strong>${player.score}</strong>`;
+      finalLeaderboardEl.appendChild(item);
+    });
+  finalSummary.textContent = `Rounds played: ${payload.roundsPlayed} / ${payload.maxRounds}`;
+  finalPanel.classList.remove("hidden");
+};
+
 const setHostControls = () => {
   const isHost = currentUserId && currentUserId === state.hostId;
   const canStart = isHost && !state.inProgress && state.currentRound < 0;
@@ -134,6 +154,8 @@ const setHostControls = () => {
   nextBtn.disabled = !canNext;
   startBtn.classList.toggle("hidden", !canStart);
   nextBtn.classList.toggle("hidden", !canNext);
+  restartBtn.classList.toggle("hidden", !isHost);
+  restartBtn.disabled = !isHost;
 };
 
 joinBtn.addEventListener("click", () => {
@@ -170,6 +192,11 @@ submitBtn.addEventListener("click", () => {
   });
 });
 
+restartBtn.addEventListener("click", () => {
+  if (!currentRoom) return;
+  socket.emit("room:reset", { roomCode: currentRoom });
+});
+
 langEn.addEventListener("click", () => {
   if (!currentRoom) return;
   socket.emit("room:language", { roomCode: currentRoom, language: "en" });
@@ -202,11 +229,20 @@ socket.on("room:state", (payload) => {
   state.language = payload.language;
   state.inProgress = payload.inProgress;
   state.currentRound = payload.currentRound;
+  state.gameOver = payload.gameOver;
+  state.maxRounds = payload.maxRounds;
   roundEndsAt = payload.roundEndsAt;
 
   renderPlayers();
   renderScenario(payload.scenario);
   setHostControls();
+  if (payload.gameOver) {
+    renderFinal({
+      leaderboard: payload.players,
+      roundsPlayed: payload.currentRound + 1,
+      maxRounds: payload.maxRounds,
+    });
+  }
 });
 
 socket.on("room:answer", (answer) => {
@@ -234,4 +270,8 @@ socket.on("room:results", (payload) => {
     btn.disabled = false;
     btn.classList.remove("selected");
   });
+});
+
+socket.on("room:gameover", (payload) => {
+  renderFinal(payload);
 });

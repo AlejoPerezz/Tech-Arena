@@ -177,6 +177,360 @@
           ]
         }
       }
+    },
+    {
+      "id": "cache-miss",
+      "locale": {
+        "en": {
+          "title": "Cache hit rate drops suddenly",
+          "prompt": "Users report slower pages. Cache hit rate fell to 20%. What do you do?",
+          "options": [
+            {
+              "id": "investigate-evictions",
+              "label": "Inspect eviction policy and cache size",
+              "points": 7,
+              "outcome": "You find an eviction surge and stabilize the cache.",
+              "explanation": "Evictions often cause hit-rate drops; tune size and policy first."
+            },
+            {
+              "id": "disable-cache",
+              "label": "Disable cache to simplify behavior",
+              "points": -2,
+              "outcome": "Latency increases and load spikes on the database.",
+              "explanation": "Turning off cache increases backend load during incidents."
+            },
+            {
+              "id": "raise-ttl",
+              "label": "Increase TTL without analysis",
+              "points": 2,
+              "outcome": "Some improvement, but stale data issues appear.",
+              "explanation": "TTL changes can help but should be validated for correctness."
+            }
+          ]
+        },
+        "es": {
+          "title": "La tasa de aciertos de caché cae",
+          "prompt": "Los usuarios reportan páginas lentas. El hit-rate bajó a 20%. ¿Qué haces?",
+          "options": [
+            {
+              "id": "investigate-evictions",
+              "label": "Revisar política de expulsión y tamaño",
+              "points": 7,
+              "outcome": "Detectas muchas expulsiones y estabilizas la caché.",
+              "explanation": "Las expulsiones suelen causar bajas; ajusta tamaño y política."
+            },
+            {
+              "id": "disable-cache",
+              "label": "Desactivar la caché para simplificar",
+              "points": -2,
+              "outcome": "Aumenta la latencia y la carga en la base de datos.",
+              "explanation": "Apagar la caché incrementa la carga en incidentes."
+            },
+            {
+              "id": "raise-ttl",
+              "label": "Subir el TTL sin análisis",
+              "points": 2,
+              "outcome": "Mejora parcial pero aparecen datos stale.",
+              "explanation": "Cambiar el TTL requiere validar la frescura."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "queue-backlog",
+      "locale": {
+        "en": {
+          "title": "Background queue backlog",
+          "prompt": "Jobs are delayed by hours. What is your first move?",
+          "options": [
+            {
+              "id": "scale-workers",
+              "label": "Scale workers and inspect slow jobs",
+              "points": 6,
+              "outcome": "Backlog clears and bottlenecks are identified.",
+              "explanation": "Scaling helps while you find the slowest tasks."
+            },
+            {
+              "id": "drop-jobs",
+              "label": "Drop pending jobs to catch up",
+              "points": -4,
+              "outcome": "Users lose data and trust.",
+              "explanation": "Dropping jobs should be a last resort."
+            },
+            {
+              "id": "pause-ingest",
+              "label": "Pause job ingestion briefly",
+              "points": 4,
+              "outcome": "Backlog stabilizes while you diagnose.",
+              "explanation": "Pausing producers can reduce pressure safely."
+            }
+          ]
+        },
+        "es": {
+          "title": "Cola de trabajos atrasada",
+          "prompt": "Los jobs se retrasan horas. ¿Qué haces primero?",
+          "options": [
+            {
+              "id": "scale-workers",
+              "label": "Escalar workers y revisar jobs lentos",
+              "points": 6,
+              "outcome": "Se limpia el backlog y se identifican cuellos.",
+              "explanation": "Escalar ayuda mientras detectas tareas lentas."
+            },
+            {
+              "id": "drop-jobs",
+              "label": "Eliminar jobs pendientes",
+              "points": -4,
+              "outcome": "Se pierden datos y confianza.",
+              "explanation": "Eliminar jobs es último recurso."
+            },
+            {
+              "id": "pause-ingest",
+              "label": "Pausar la ingesta temporalmente",
+              "points": 4,
+              "outcome": "El backlog se estabiliza mientras diagnosticas.",
+              "explanation": "Pausar productores reduce presión."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ci-failing",
+      "locale": {
+        "en": {
+          "title": "CI pipeline fails after dependency update",
+          "prompt": "Builds fail after a dependency bump. What do you do?",
+          "options": [
+            {
+              "id": "pin-version",
+              "label": "Pin to the last known good version",
+              "points": 7,
+              "outcome": "Builds pass while you investigate the breaking change.",
+              "explanation": "Pinning restores stability and buys time."
+            },
+            {
+              "id": "skip-tests",
+              "label": "Skip the failing tests temporarily",
+              "points": -5,
+              "outcome": "Bugs slip into production.",
+              "explanation": "Skipping tests removes safety checks."
+            },
+            {
+              "id": "fork-lib",
+              "label": "Fork and patch the dependency",
+              "points": 4,
+              "outcome": "You fix the issue but must maintain the fork.",
+              "explanation": "Forking works when an upstream fix is slow."
+            }
+          ]
+        },
+        "es": {
+          "title": "CI falla tras actualizar dependencia",
+          "prompt": "Los builds fallan tras un upgrade. ¿Qué haces?",
+          "options": [
+            {
+              "id": "pin-version",
+              "label": "Fijar la última versión estable",
+              "points": 7,
+              "outcome": "Los builds pasan mientras investigas.",
+              "explanation": "Fijar versión devuelve estabilidad."
+            },
+            {
+              "id": "skip-tests",
+              "label": "Saltar tests temporalmente",
+              "points": -5,
+              "outcome": "Se introducen bugs en producción.",
+              "explanation": "Omitir tests elimina la seguridad."
+            },
+            {
+              "id": "fork-lib",
+              "label": "Hacer fork y parchear",
+              "points": 4,
+              "outcome": "Se corrige pero hay que mantener el fork.",
+              "explanation": "Forkear sirve si upstream tarda."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cdn-outage",
+      "locale": {
+        "en": {
+          "title": "CDN outage affects static assets",
+          "prompt": "Static assets fail to load globally. What is best?",
+          "options": [
+            {
+              "id": "switch-origin",
+              "label": "Serve assets directly from origin temporarily",
+              "points": 6,
+              "outcome": "Users regain access with higher latency.",
+              "explanation": "Origin fallback restores service during CDN issues."
+            },
+            {
+              "id": "wait-cdn",
+              "label": "Wait for CDN to recover",
+              "points": -4,
+              "outcome": "Users keep seeing broken pages.",
+              "explanation": "Waiting prolongs impact."
+            },
+            {
+              "id": "switch-provider",
+              "label": "Switch to backup CDN configuration",
+              "points": 8,
+              "outcome": "Traffic reroutes and availability returns quickly.",
+              "explanation": "A prepared backup CDN reduces downtime."
+            }
+          ]
+        },
+        "es": {
+          "title": "Caída de CDN afecta assets",
+          "prompt": "Los assets no cargan globalmente. ¿Qué haces?",
+          "options": [
+            {
+              "id": "switch-origin",
+              "label": "Servir assets desde el origen temporalmente",
+              "points": 6,
+              "outcome": "Los usuarios acceden con más latencia.",
+              "explanation": "El fallback al origen restaura el servicio."
+            },
+            {
+              "id": "wait-cdn",
+              "label": "Esperar a que el CDN se recupere",
+              "points": -4,
+              "outcome": "Los usuarios ven páginas rotas.",
+              "explanation": "Esperar prolonga el impacto."
+            },
+            {
+              "id": "switch-provider",
+              "label": "Cambiar a CDN de respaldo",
+              "points": 8,
+              "outcome": "El tráfico se redirige y vuelve la disponibilidad.",
+              "explanation": "Un CDN de respaldo reduce el downtime."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "memory-leak",
+      "locale": {
+        "en": {
+          "title": "Memory leak suspected",
+          "prompt": "Memory usage grows until the service crashes. What do you do?",
+          "options": [
+            {
+              "id": "enable-profiling",
+              "label": "Enable profiling in staging and reproduce",
+              "points": 7,
+              "outcome": "You isolate the leak safely.",
+              "explanation": "Profiling in staging avoids production risk."
+            },
+            {
+              "id": "restart-loop",
+              "label": "Add an auto-restart and move on",
+              "points": -1,
+              "outcome": "Crashes continue and root cause remains.",
+              "explanation": "Restarts mask the issue but don’t fix it."
+            },
+            {
+              "id": "rollback",
+              "label": "Rollback the last deploy",
+              "points": 5,
+              "outcome": "Stability returns while you investigate.",
+              "explanation": "Rollback reduces impact if the leak is new."
+            }
+          ]
+        },
+        "es": {
+          "title": "Posible fuga de memoria",
+          "prompt": "La memoria crece hasta que el servicio cae. ¿Qué haces?",
+          "options": [
+            {
+              "id": "enable-profiling",
+              "label": "Activar profiling en staging y reproducir",
+              "points": 7,
+              "outcome": "Aíslas la fuga con seguridad.",
+              "explanation": "Profiling en staging evita riesgos en prod."
+            },
+            {
+              "id": "restart-loop",
+              "label": "Agregar auto-reinicio y seguir",
+              "points": -1,
+              "outcome": "Los crashes continúan sin causa raíz.",
+              "explanation": "Reiniciar oculta el problema."
+            },
+            {
+              "id": "rollback",
+              "label": "Revertir el último deploy",
+              "points": 5,
+              "outcome": "Vuelve la estabilidad mientras investigas.",
+              "explanation": "Revertir reduce impacto si es reciente."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "observability-gap",
+      "locale": {
+        "en": {
+          "title": "Observability gaps during incident",
+          "prompt": "Logs are missing for the failing service. What do you do?",
+          "options": [
+            {
+              "id": "add-logging",
+              "label": "Add structured logging and redeploy",
+              "points": 6,
+              "outcome": "You get better signals quickly.",
+              "explanation": "Structured logs improve debugging speed."
+            },
+            {
+              "id": "guess-fix",
+              "label": "Deploy a guess fix without data",
+              "points": -3,
+              "outcome": "The issue persists and confidence drops.",
+              "explanation": "Guessing increases risk during incidents."
+            },
+            {
+              "id": "enable-tracing",
+              "label": "Enable tracing for the critical endpoint",
+              "points": 7,
+              "outcome": "You pinpoint the latency source.",
+              "explanation": "Targeted tracing narrows the bottleneck quickly."
+            }
+          ]
+        },
+        "es": {
+          "title": "Falta de observabilidad",
+          "prompt": "Faltan logs del servicio. ¿Qué haces?",
+          "options": [
+            {
+              "id": "add-logging",
+              "label": "Agregar logging estructurado y desplegar",
+              "points": 6,
+              "outcome": "Obtienes mejores señales rápidamente.",
+              "explanation": "Los logs estructurados aceleran el diagnóstico."
+            },
+            {
+              "id": "guess-fix",
+              "label": "Aplicar un fix sin datos",
+              "points": -3,
+              "outcome": "El problema persiste y baja la confianza.",
+              "explanation": "Adivinar aumenta el riesgo."
+            },
+            {
+              "id": "enable-tracing",
+              "label": "Habilitar tracing del endpoint crítico",
+              "points": 7,
+              "outcome": "Encuentras el origen de la latencia.",
+              "explanation": "El tracing focalizado reduce el tiempo de diagnóstico."
+            }
+          ]
+        }
+      }
     }
   ]
 }
