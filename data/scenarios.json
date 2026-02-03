@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "scenarios": [
+    {
+      "id": "api-slow-prod",
+      "locale": {
+        "en": {
+          "title": "Your API is slow in production",
+          "prompt": "Latency spikes after a new release. What do you do first?",
+          "options": [
+            {
+              "id": "rollback",
+              "label": "Rollback the release and investigate",
+              "points": 8,
+              "outcome": "Latency returns to normal quickly.",
+              "explanation": "Rollback reduces blast radius while you inspect regressions safely."
+            },
+            {
+              "id": "scale",
+              "label": "Add more servers immediately",
+              "points": 2,
+              "outcome": "Costs rise and latency improves only slightly.",
+              "explanation": "Scaling might mask the problem and wastes budget if the issue is code-related."
+            },
+            {
+              "id": "ignore",
+              "label": "Wait to see if it stabilizes",
+              "points": -5,
+              "outcome": "Users continue to experience timeouts.",
+              "explanation": "Production incidents need immediate response to protect user experience."
+            }
+          ]
+        },
+        "es": {
+          "title": "Tu API es lenta en producción",
+          "prompt": "La latencia se dispara tras un nuevo release. ¿Qué haces primero?",
+          "options": [
+            {
+              "id": "rollback",
+              "label": "Revertir el release e investigar",
+              "points": 8,
+              "outcome": "La latencia vuelve a la normalidad rápidamente.",
+              "explanation": "Revertir reduce el impacto mientras investigas la regresión con seguridad."
+            },
+            {
+              "id": "scale",
+              "label": "Agregar más servidores de inmediato",
+              "points": 2,
+              "outcome": "Suben los costos y la latencia mejora poco.",
+              "explanation": "Escalar puede ocultar el problema y desperdicia presupuesto si es un bug."
+            },
+            {
+              "id": "ignore",
+              "label": "Esperar a ver si se estabiliza",
+              "points": -5,
+              "outcome": "Los usuarios siguen experimentando timeouts.",
+              "explanation": "Los incidentes en producción requieren respuesta inmediata."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "db-locks",
+      "locale": {
+        "en": {
+          "title": "Database writes are locking up",
+          "prompt": "Write queries block reads during peak usage. What do you do?",
+          "options": [
+            {
+              "id": "index",
+              "label": "Add the missing index and test the query plan",
+              "points": 7,
+              "outcome": "Lock time drops and throughput improves.",
+              "explanation": "Indexes reduce scan time and hold locks for a shorter window."
+            },
+            {
+              "id": "retry",
+              "label": "Add automatic retries in the app",
+              "points": 1,
+              "outcome": "Load increases and contention worsens.",
+              "explanation": "Retries can amplify contention and should not be the first fix."
+            },
+            {
+              "id": "maintenance",
+              "label": "Take the system down for maintenance",
+              "points": -3,
+              "outcome": "Downtime frustrates users and delays resolution.",
+              "explanation": "Maintenance should be a last resort after lightweight fixes."
+            }
+          ]
+        },
+        "es": {
+          "title": "Bloqueos en escrituras de base de datos",
+          "prompt": "Las escrituras bloquean las lecturas en horas pico. ¿Qué haces?",
+          "options": [
+            {
+              "id": "index",
+              "label": "Agregar el índice faltante y revisar el plan",
+              "points": 7,
+              "outcome": "Bajan los bloqueos y mejora el rendimiento.",
+              "explanation": "Los índices reducen el tiempo de escaneo y la duración de bloqueos."
+            },
+            {
+              "id": "retry",
+              "label": "Agregar reintentos automáticos en la app",
+              "points": 1,
+              "outcome": "La carga sube y el bloqueo empeora.",
+              "explanation": "Los reintentos pueden amplificar la contención."
+            },
+            {
+              "id": "maintenance",
+              "label": "Bajar el sistema por mantenimiento",
+              "points": -3,
+              "outcome": "El downtime frustra a los usuarios.",
+              "explanation": "El mantenimiento es la última opción."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "security-vuln",
+      "locale": {
+        "en": {
+          "title": "Critical security vulnerability discovered",
+          "prompt": "A dependency reports a critical vulnerability. What is the best move?",
+          "options": [
+            {
+              "id": "patch",
+              "label": "Patch and redeploy immediately",
+              "points": 9,
+              "outcome": "Risk is reduced quickly and stakeholders are informed.",
+              "explanation": "Rapid patching is best practice for critical CVEs."
+            },
+            {
+              "id": "wait",
+              "label": "Wait for the next scheduled release",
+              "points": -6,
+              "outcome": "Exposure continues and risk remains high.",
+              "explanation": "Delaying fixes for critical vulnerabilities is risky."
+            },
+            {
+              "id": "mitigate",
+              "label": "Apply a config mitigation while planning a patch",
+              "points": 5,
+              "outcome": "Risk is lowered while the patch is prepared.",
+              "explanation": "Temporary mitigation is acceptable when a patch is in flight."
+            }
+          ]
+        },
+        "es": {
+          "title": "Vulnerabilidad crítica de seguridad",
+          "prompt": "Una dependencia reporta una vulnerabilidad crítica. ¿Cuál es la mejor acción?",
+          "options": [
+            {
+              "id": "patch",
+              "label": "Parchear y desplegar de inmediato",
+              "points": 9,
+              "outcome": "El riesgo se reduce rápido y se informa a stakeholders.",
+              "explanation": "Parchear rápidamente es la mejor práctica para CVEs críticos."
+            },
+            {
+              "id": "wait",
+              "label": "Esperar al siguiente release programado",
+              "points": -6,
+              "outcome": "La exposición continúa y el riesgo sigue alto.",
+              "explanation": "Retrasar parches críticos es peligroso."
+            },
+            {
+              "id": "mitigate",
+              "label": "Aplicar mitigación y planear el parche",
+              "points": 5,
+              "outcome": "El riesgo baja mientras se prepara el parche.",
+              "explanation": "La mitigación temporal es válida si el parche está en camino."
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
