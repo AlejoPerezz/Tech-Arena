@@ -396,14 +396,19 @@ const renderFinal = (payload) => {
       );
       const weaknesses = topicsSorted.slice(0, 2).map(([topic]) => topic);
       const strengths = topicsSorted.slice(-2).map(([topic]) => topic);
-      const topics = getRecommendationsForScore(
-        player.score,
-        payload.roundsPlayed,
-        index + 1,
-        sorted.length,
-        strengths,
-        weaknesses
-      );
+      const aiRecommendations = payload.recommendations?.find(
+        (entry) => entry.playerId === player.id
+      )?.items;
+      const topics = Array.isArray(aiRecommendations) && aiRecommendations.length
+        ? aiRecommendations
+        : getRecommendationsForScore(
+            player.score,
+            payload.roundsPlayed,
+            index + 1,
+            sorted.length,
+            strengths,
+            weaknesses
+          );
       recommendation.innerHTML = `<strong>${player.name}</strong><ul>${topics
         .map((topic) => `<li>${topic}</li>`)
         .join("")}</ul>`;
@@ -631,7 +636,6 @@ viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
   socket.emit("room:showScoreboard", {
     roomCode: currentRoom,
-    payload: pendingGameover,
   });
   pendingGameover = null;
 });
