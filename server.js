@@ -66,20 +66,25 @@ const createRoomState = (roomCode) => ({
 });
 
 const ensureScenarioOrder = (roomState) => {
-  if (!scenarios.length) return;
+  if (!scenarios.length) return false;
   if (roomState.scenarioOrder.length !== scenarios.length) {
     roomState.scenarioOrder = shuffleArray(
       scenarios.map((_, index) => index)
     );
     roomState.scenarioIndex = Math.min(roomState.scenarioIndex, scenarios.length - 1);
   }
+  if (!roomState.scenarioOrder.length) {
+    roomState.scenarioOrder = scenarios.map((_, index) => index);
+  }
+  return true;
 };
 
 const getScenarioForRoom = (roomState) => {
   if (!scenarios.length) return null;
-  ensureScenarioOrder(roomState);
-  const index =
-    roomState.scenarioIndex < 0 ? roomState.scenarioOrder[0] : roomState.scenarioOrder[roomState.scenarioIndex];
+  if (!ensureScenarioOrder(roomState)) return null;
+  const orderIndex =
+    roomState.scenarioIndex < 0 ? 0 : roomState.scenarioIndex;
+  const index = roomState.scenarioOrder[orderIndex] ?? 0;
   return scenarios[index] ?? null;
 };
 
@@ -117,7 +122,12 @@ const sendRoomState = (roomState) => {
 const endRound = (roomState) => {
   if (!roomState.inProgress) return;
   const scenario = getScenarioForRoom(roomState);
-  if (!scenario) return;
+  if (!scenario) {
+    roomState.answers.clear();
+    roomState.roundEndsAt = null;
+    roomState.inProgress = false;
+    return;
+  }
 
   const results = [];
 
@@ -152,7 +162,11 @@ const startRound = (roomState) => {
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
-  ensureScenarioOrder(roomState);
+  if (!ensureScenarioOrder(roomState)) {
+    roomState.inProgress = false;
+    roomState.roundEndsAt = null;
+    return;
+  }
   roomState.scenarioIndex += 1;
   if (roomState.scenarioIndex >= roomState.scenarioOrder.length) {
     roomState.scenarioOrder = shuffleArray(
