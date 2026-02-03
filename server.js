@@ -199,7 +199,7 @@ io.on("connection", (socket) => {
 
   socket.on("room:language", ({ roomCode, language }) => {
     const roomState = rooms.get(roomCode);
-    if (!roomState || roomState.hostId !== socket.id) return;
+    if (!roomState) return;
     if (!language || !["en", "es"].includes(language)) return;
     roomState.language = language;
     sendRoomState(roomState);
