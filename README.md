@@ -18,7 +18,7 @@ Edit `data/scenarios.json`. The server hot-reloads changes automatically.
 
 ## Gemini integration
 
-Set `GEMINI_API_KEY` to enable Gemini-powered scenarios and final recommendations. You can also override the default model with `GEMINI_MODEL` (defaults to `gemini-1.5-flash`). If the key is not set, the server falls back to `data/scenarios.json` and the built-in recommendation logic.
+Set `GEMINI_API_KEY` to enable Gemini-powered scenarios and final recommendations. You can also override the default model with `GEMINI_MODEL` (defaults to `gemini-1.5-flash`). The server requires the API key to generate questions and recommendations.
 
 ## Tests
 

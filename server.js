@@ -391,28 +391,21 @@ const startRound = async (roomState) => {
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
-  let scenario = null;
-  if (GEMINI_API_KEY) {
-    scenario = await generateScenarioFromGemini(roomState.language);
+  if (!GEMINI_API_KEY) {
+    roomState.inProgress = false;
+    roomState.roundEndsAt = null;
+    io.to(roomState.roomCode).emit("room:error", {
+      message: "Missing GEMINI_API_KEY. Configure the server to generate scenarios.",
+    });
+    return;
   }
-  if (!scenario) {
-    if (!ensureScenarioOrder(roomState)) {
-      roomState.inProgress = false;
-      roomState.roundEndsAt = null;
-      return;
-    }
-    roomState.scenarioIndex += 1;
-    if (roomState.scenarioIndex >= roomState.scenarioOrder.length) {
-      roomState.scenarioOrder = shuffleArray(
-        scenarios.map((_, index) => index)
-      );
-      roomState.scenarioIndex = 0;
-    }
-    scenario = buildScenarioForRoom(getScenarioForRoom(roomState), roomState.language);
-  }
+  const scenario = await generateScenarioFromGemini(roomState.language);
   if (!scenario) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
+    io.to(roomState.roomCode).emit("room:error", {
+      message: "Failed to generate a scenario. Please try again.",
+    });
     return;
   }
   roomState.currentScenario = scenario;
@@ -522,6 +515,12 @@ io.on("connection", (socket) => {
     const roomState = rooms.get(roomCode);
     if (!roomState || roomState.hostId !== socket.id) return;
     if (!roomState.finalResults) return;
+    if (!GEMINI_API_KEY) {
+      io.to(roomState.roomCode).emit("room:error", {
+        message: "Missing GEMINI_API_KEY. Configure the server to generate recommendations.",
+      });
+      return;
+    }
     if (!roomState.finalRecommendations) {
       roomState.finalRecommendations = await generateRecommendationsFromGemini(
         roomState.finalResults.leaderboard,
@@ -530,6 +529,12 @@ io.on("connection", (socket) => {
         roomState.finalResults.roundsPlayed,
         roomState.language
       );
+    }
+    if (!roomState.finalRecommendations) {
+      io.to(roomState.roomCode).emit("room:error", {
+        message: "Failed to generate recommendations. Please try again.",
+      });
+      return;
     }
     io.to(roomState.roomCode).emit("room:showScoreboard", {
       ...roomState.finalResults,

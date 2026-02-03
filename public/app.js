@@ -514,6 +514,10 @@ socket.on("connect", () => {
 });
 
 socket.on("room:error", ({ message }) => {
+  if (!roomPanel.classList.contains("hidden")) {
+    roomStatus.textContent = message;
+    return;
+  }
   joinError.textContent = message;
 });
 
