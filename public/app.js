@@ -134,10 +134,6 @@ const renderResults = (payload) => {
       correctOptions[0]?.explanation ?? ""
     );
 
-    const chosenExplanation = getFriendlyExplanation(
-      result.explanation ?? ""
-    );
-
     const verdict = isCorrect ? t("correct") : t("incorrect");
     const verdictClass = isCorrect ? "correct" : "incorrect";
     const whyChosenLabel = isCorrect
