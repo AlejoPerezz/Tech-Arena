@@ -56,7 +56,8 @@ const createRoomState = (roomCode) => ({
 
 const getScenarioForRoom = (roomState) => {
   if (!scenarios.length) return null;
-  const index = roomState.currentRound % scenarios.length;
+  const baseIndex = roomState.currentRound < 0 ? 0 : roomState.currentRound;
+  const index = baseIndex % scenarios.length;
   return scenarios[index] ?? null;
 };
 
