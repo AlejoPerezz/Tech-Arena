@@ -42,6 +42,15 @@ app.get("/api/scenarios", (req, res) => {
 
 const rooms = new Map();
 
+const shuffleArray = (items) => {
+  const copy = [...items];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};
+
 const createRoomState = (roomCode) => ({
   roomCode,
   players: new Map(),
@@ -52,12 +61,25 @@ const createRoomState = (roomCode) => ({
   roundEndsAt: null,
   inProgress: false,
   language: "en",
+  scenarioOrder: [],
+  scenarioIndex: -1,
 });
+
+const ensureScenarioOrder = (roomState) => {
+  if (!scenarios.length) return;
+  if (roomState.scenarioOrder.length !== scenarios.length) {
+    roomState.scenarioOrder = shuffleArray(
+      scenarios.map((_, index) => index)
+    );
+    roomState.scenarioIndex = Math.min(roomState.scenarioIndex, scenarios.length - 1);
+  }
+};
 
 const getScenarioForRoom = (roomState) => {
   if (!scenarios.length) return null;
-  const baseIndex = roomState.currentRound < 0 ? 0 : roomState.currentRound;
-  const index = baseIndex % scenarios.length;
+  ensureScenarioOrder(roomState);
+  const index =
+    roomState.scenarioIndex < 0 ? roomState.scenarioOrder[0] : roomState.scenarioOrder[roomState.scenarioIndex];
   return scenarios[index] ?? null;
 };
 
@@ -122,6 +144,7 @@ const endRound = (roomState) => {
 
   roomState.answers.clear();
   roomState.roundEndsAt = null;
+  roomState.inProgress = false;
 };
 
 const startRound = (roomState) => {
@@ -129,6 +152,14 @@ const startRound = (roomState) => {
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
+  ensureScenarioOrder(roomState);
+  roomState.scenarioIndex += 1;
+  if (roomState.scenarioIndex >= roomState.scenarioOrder.length) {
+    roomState.scenarioOrder = shuffleArray(
+      scenarios.map((_, index) => index)
+    );
+    roomState.scenarioIndex = 0;
+  }
   sendRoomState(roomState);
 
   setTimeout(() => {
