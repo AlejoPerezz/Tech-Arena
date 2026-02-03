@@ -119,8 +119,14 @@ const buildScenarioForRoom = (scenario, language) => {
 
 const parseOpenRouterJson = (text) => {
   if (!text) return null;
+  const cleaned = text
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .trim();
   try {
-    return JSON.parse(text);
+    return JSON.parse(cleaned);
   } catch (error) {
     console.warn("Failed to parse OpenRouter JSON:", error.message);
     return null;
