@@ -10,6 +10,7 @@ const joinTitle = document.querySelector("#join-panel h2");
 const joinSubtitle = document.querySelector("#join-panel p");
 const roomTitle = document.getElementById("room-title");
 const roomStatus = document.getElementById("room-status");
+const playerNameDisplay = document.getElementById("player-name-display");
 const startBtn = document.getElementById("start-btn");
 const nextBtn = document.getElementById("next-btn");
 const scenarioTitle = document.getElementById("scenario-title");
@@ -43,6 +44,7 @@ let roundEndsAt = null;
 let lastScenario = null;
 let selectedOption = null;
 let pendingGameover = null;
+let currentPlayerName = null;
 
 const translations = {
   en: {
@@ -67,6 +69,8 @@ const translations = {
     missingJoin: "Please enter a room code and name.",
     correct: "Correct",
     incorrect: "Incorrect",
+    recommended: "Recommended",
+    lessEffective: "Less effective",
     correctAnswer: "Correct answer",
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
@@ -97,6 +101,8 @@ const translations = {
     missingJoin: "Ingresa un código de sala y tu nombre.",
     correct: "Correcta",
     incorrect: "Incorrecta",
+    recommended: "Recomendada",
+    lessEffective: "Menos efectiva",
     correctAnswer: "Respuesta correcta",
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
@@ -240,13 +246,21 @@ const renderResults = (payload) => {
   resultsEl.innerHTML = "";
   const correctOptionIds = payload.correctOptionIds ?? [];
   const correctOptions = payload.correctOptions ?? [];
-  payload.results.forEach((result) => {
+  const currentResult = payload.results.find(
+    (result) => result.playerId === currentUserId
+  );
+  if (!currentResult) {
+    resultsPanel.classList.remove("hidden");
+    return;
+  }
+  const resultsToShow = [currentResult];
+  resultsToShow.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
     const isCorrect = correctOptionIds.includes(result.optionId);
     const selectedLabel = result.optionLabel ?? result.optionId ?? t("noAnswer");
     const item = document.createElement("div");
     item.className = "results-item";
-    const verdict = isCorrect ? t("correct") : t("incorrect");
+    const verdict = isCorrect ? t("recommended") : t("lessEffective");
     const verdictClass = isCorrect ? "correct" : "incorrect";
     const correctAnswerText = correctOptions
       .map((option) => option.label)
@@ -414,6 +428,8 @@ const attemptJoin = () => {
   }
   joinError.textContent = "";
   currentRoom = roomCode;
+  currentPlayerName = name;
+  playerNameDisplay.textContent = name ? `${name}` : "";
   if (!socket.connected) {
     joinError.textContent = t("connecting");
     socket.once("connect", () => {
@@ -536,8 +552,8 @@ socket.on("room:results", (payload) => {
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
   optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
-    btn.disabled = true;
-    btn.classList.remove("selected", "correct", "incorrect");
+    btn.disabled = false;
+    btn.classList.remove("correct", "incorrect");
     const optionId = btn.dataset.optionId;
     if (optionId && correctOptionIds.includes(optionId)) {
       btn.classList.add("correct");
