@@ -99,7 +99,8 @@ const serializePlayers = (roomState) =>
   }));
 
 const sendRoomState = (roomState) => {
-  const scenario = getScenarioForRoom(roomState);
+  const shouldRevealScenario = roomState.inProgress || roomState.currentRound >= 0;
+  const scenario = shouldRevealScenario ? getScenarioForRoom(roomState) : null;
   io.to(roomState.roomCode).emit("room:state", {
     roomCode: roomState.roomCode,
     inProgress: roomState.inProgress,
@@ -152,9 +153,19 @@ const endRound = (roomState) => {
     });
   }
 
+  const optionPoints = scenario.locale[roomState.language].options.map((option) => ({
+    id: option.id,
+    points: option.points,
+  }));
+  const maxPoints = Math.max(...optionPoints.map((option) => option.points));
+  const correctOptionIds = optionPoints
+    .filter((option) => option.points === maxPoints)
+    .map((option) => option.id);
+
   io.to(roomState.roomCode).emit("room:results", {
     results,
     leaderboard: serializePlayers(roomState),
+    correctOptionIds,
   });
 
   roomState.answers.clear();

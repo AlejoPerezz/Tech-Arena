@@ -98,6 +98,7 @@ const renderScenario = (scenario) => {
     const button = document.createElement("button");
     button.className = "option-btn";
     button.textContent = option.label;
+    button.dataset.optionId = option.id;
     button.addEventListener("click", () => {
       if (!state.inProgress) return;
       if (!currentRoom) return;
@@ -105,6 +106,7 @@ const renderScenario = (scenario) => {
       submitBtn.classList.remove("hidden");
       submitBtn.disabled = false;
       document.querySelectorAll(".option-btn").forEach((btn) => {
+        btn.classList.remove("correct", "incorrect");
         btn.classList.toggle("selected", btn === button);
       });
     });
@@ -263,13 +265,22 @@ socket.on("room:results", (payload) => {
   state.players = payload.leaderboard;
   renderPlayers();
   renderResults(payload);
-  state.selectedOption = null;
+  const correctOptionIds = payload.correctOptionIds ?? [];
+  const selectedOptionId = state.selectedOption;
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
   optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
-    btn.disabled = false;
-    btn.classList.remove("selected");
+    btn.disabled = true;
+    btn.classList.remove("selected", "correct", "incorrect");
+    const optionId = btn.dataset.optionId;
+    if (optionId && correctOptionIds.includes(optionId)) {
+      btn.classList.add("correct");
+    }
+    if (selectedOptionId && optionId === selectedOptionId && !correctOptionIds.includes(optionId)) {
+      btn.classList.add("incorrect");
+    }
   });
+  state.selectedOption = null;
 });
 
 socket.on("room:gameover", (payload) => {

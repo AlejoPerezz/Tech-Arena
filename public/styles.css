@@ -155,6 +155,16 @@ input {
   box-shadow: 0 0 0 2px rgba(122, 215, 255, 0.3);
 }
 
+.option-btn.correct {
+  border-color: #58f0b6;
+  box-shadow: 0 0 0 2px rgba(88, 240, 182, 0.3);
+}
+
+.option-btn.incorrect {
+  border-color: #ff7a7a;
+  box-shadow: 0 0 0 2px rgba(255, 122, 122, 0.3);
+}
+
 #submit-btn {
   margin-top: 16px;
   width: 100%;
