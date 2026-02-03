@@ -20,10 +20,7 @@ const answersEl = document.getElementById("answers");
 const resultsEl = document.getElementById("results");
 const finalSummary = document.getElementById("final-summary");
 const finalLeaderboardEl = document.getElementById("final-leaderboard");
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
 const finalRecommendationsEl = document.getElementById("final-recommendations");
-=======
->>>>>>> main
 const restartBtn = document.getElementById("restart-btn");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
@@ -129,7 +126,6 @@ const renderAnswers = (answers) => {
 
 const renderResults = (payload) => {
   resultsEl.innerHTML = "";
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
   const correctOptionIds = payload.correctOptionIds ?? [];
   payload.results.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
@@ -139,19 +135,11 @@ const renderResults = (payload) => {
     const verdict = isCorrect ? "Correct" : "Incorrect";
     const verdictClass = isCorrect ? "correct" : "incorrect";
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p>${result.outcome}</p><p>${result.explanation}</p><p><strong>${result.points} pts</strong></p>`;
-=======
-  payload.results.forEach((result) => {
-    const player = state.players.find((p) => p.id === result.playerId);
-    const item = document.createElement("div");
-    item.className = "results-item";
-    item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><p>${result.outcome}</p><p>${result.explanation}</p><p><strong>${result.points} pts</strong></p>`;
->>>>>>> main
     resultsEl.appendChild(item);
   });
   resultsPanel.classList.remove("hidden");
 };
 
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
 const getRecommendationsForScore = (score, roundsPlayed) => {
   const average = roundsPlayed ? score / roundsPlayed : 0;
   if (average >= 6) {
@@ -178,17 +166,12 @@ const getRecommendationsForScore = (score, roundsPlayed) => {
 const renderFinal = (payload) => {
   finalLeaderboardEl.innerHTML = "";
   finalRecommendationsEl.innerHTML = "";
-=======
-const renderFinal = (payload) => {
-  finalLeaderboardEl.innerHTML = "";
->>>>>>> main
   payload.leaderboard
     .sort((a, b) => b.score - a.score)
     .forEach((player) => {
       const item = document.createElement("li");
       item.innerHTML = `<span>${player.name}</span><strong>${player.score}</strong>`;
       finalLeaderboardEl.appendChild(item);
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
 
       const recommendation = document.createElement("div");
       recommendation.className = "recommendation-item";
@@ -197,8 +180,6 @@ const renderFinal = (payload) => {
         .map((topic) => `<li>${topic}</li>`)
         .join("")}</ul>`;
       finalRecommendationsEl.appendChild(recommendation);
-=======
->>>>>>> main
     });
   finalSummary.textContent = `Rounds played: ${payload.roundsPlayed} / ${payload.maxRounds}`;
   finalPanel.classList.remove("hidden");
@@ -216,7 +197,7 @@ const setHostControls = () => {
   restartBtn.disabled = !isHost;
 };
 
-joinBtn.addEventListener("click", () => {
+const attemptJoin = () => {
   const roomCode = document.getElementById("room-code").value.trim();
   const name = document.getElementById("player-name").value.trim();
   if (!roomCode || !name) {
@@ -225,7 +206,26 @@ joinBtn.addEventListener("click", () => {
   }
   joinError.textContent = "";
   currentRoom = roomCode;
+  if (!socket.connected) {
+    joinError.textContent = "Connecting to server...";
+    socket.once("connect", () => {
+      joinError.textContent = "";
+      socket.emit("room:join", { roomCode, name });
+    });
+    return;
+  }
   socket.emit("room:join", { roomCode, name });
+};
+
+joinBtn.addEventListener("click", attemptJoin);
+
+["room-code", "player-name"].forEach((id) => {
+  const input = document.getElementById(id);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      attemptJoin();
+    }
+  });
 });
 
 startBtn.addEventListener("click", () => {
