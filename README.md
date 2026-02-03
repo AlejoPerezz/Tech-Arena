@@ -6,6 +6,7 @@ A lightweight multiplayer decision-making game for technical teams. The app is o
 
 ```bash
 npm install
+export GEMINI_API_KEY=your_key_here
 npm run dev
 ```
 
@@ -14,6 +15,10 @@ Visit `http://localhost:3000`. Enter any room code; the first player creates the
 ## Scenario updates
 
 Edit `data/scenarios.json`. The server hot-reloads changes automatically.
+
+## Gemini integration
+
+Set `GEMINI_API_KEY` to enable Gemini-powered scenarios and final recommendations. You can also override the default model with `GEMINI_MODEL` (defaults to `gemini-1.5-flash`). If the key is not set, the server falls back to `data/scenarios.json` and the built-in recommendation logic.
 
 ## Tests
 
