@@ -513,6 +513,8 @@ socket.on("room:state", (payload) => {
   if (finalPanel.classList.contains("hidden")) {
     joinPanel.classList.add("hidden");
     roomPanel.classList.remove("hidden");
+  } else {
+    return;
   }
   roomTitle.textContent = `Room ${payload.roomCode}`;
   roomStatus.textContent = payload.inProgress ? t("roundInProgress") : t("waitingNext");
