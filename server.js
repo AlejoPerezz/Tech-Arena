@@ -136,9 +136,20 @@ const endRound = (roomState) => {
   }
 
   const results = [];
+  const locale = scenario.locale[roomState.language] ?? scenario.locale.en;
+  const noAnswerLabel =
+    roomState.language === "es" ? "Sin respuesta" : "No answer";
+  const noAnswerExplanation =
+    roomState.language === "es"
+      ? "No se seleccionó ninguna opción antes de que terminara el tiempo."
+      : "No option was selected before time ran out.";
+  const noAnswerOutcome =
+    roomState.language === "es"
+      ? "No se otorgaron puntos."
+      : "No points were awarded.";
 
   for (const [playerId, answerId] of roomState.answers.entries()) {
-    const option = scenario.locale[roomState.language].options.find(
+    const option = locale.options.find(
       (opt) => opt.id === answerId
     );
     const points = option?.points ?? 0;
@@ -154,7 +165,19 @@ const endRound = (roomState) => {
     });
   }
 
-  const optionDetails = scenario.locale[roomState.language].options.map((option) => ({
+  for (const playerId of roomState.players.keys()) {
+    if (roomState.answers.has(playerId)) continue;
+    results.push({
+      playerId,
+      optionId: null,
+      optionLabel: noAnswerLabel,
+      points: 0,
+      outcome: noAnswerOutcome,
+      explanation: noAnswerExplanation,
+    });
+  }
+
+  const optionDetails = locale.options.map((option) => ({
     id: option.id,
     label: option.label,
     points: option.points,

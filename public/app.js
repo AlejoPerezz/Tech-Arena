@@ -69,6 +69,7 @@ const translations = {
     explanation: "Explanation",
     whyCorrect: "Why it was correct",
     whyChosen: "Why your choice",
+    noAnswer: "No answer",
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
   es: {
@@ -97,6 +98,7 @@ const translations = {
     explanation: "Explicación",
     whyCorrect: "Por qué fue correcta",
     whyChosen: "Por qué elegiste esa",
+    noAnswer: "Sin respuesta",
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
 };
@@ -222,7 +224,7 @@ const renderResults = (payload) => {
   payload.results.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
     const isCorrect = correctOptionIds.includes(result.optionId);
-    const selectedLabel = result.optionLabel ?? result.optionId;
+    const selectedLabel = result.optionLabel ?? result.optionId ?? t("noAnswer");
     const item = document.createElement("div");
     item.className = "results-item";
     const verdict = isCorrect ? t("correct") : t("incorrect");
@@ -294,6 +296,9 @@ const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => 
 };
 
 const renderFinal = (payload) => {
+  joinPanel.classList.add("hidden");
+  roomPanel.classList.add("hidden");
+  resultsPanel.classList.add("hidden");
   finalLeaderboardEl.innerHTML = "";
   finalRecommendationsEl.innerHTML = "";
   const sorted = [...payload.leaderboard].sort((a, b) => b.score - a.score);
