@@ -486,6 +486,9 @@ submitBtn.addEventListener("click", () => {
 
 restartBtn.addEventListener("click", () => {
   if (!currentRoom) return;
+  finalPanel.classList.add("hidden");
+  joinPanel.classList.add("hidden");
+  roomPanel.classList.remove("hidden");
   socket.emit("room:reset", { roomCode: currentRoom });
 });
 
