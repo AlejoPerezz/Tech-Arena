@@ -588,8 +588,13 @@ socket.on("room:results", (payload) => {
     }
   });
   const isLastRound = payload.roundsPlayed === payload.maxRounds;
-  viewScoreboardBtn.classList.toggle("hidden", !isLastRound);
-  viewScoreboardBtn.disabled = !isLastRound;
+  if (isLastRound && currentUserId === state.hostId) {
+    viewScoreboardBtn.classList.remove("hidden");
+    viewScoreboardBtn.disabled = false;
+  } else {
+    viewScoreboardBtn.classList.add("hidden");
+    viewScoreboardBtn.disabled = true;
+  }
   if (isLastRound) {
     pendingGameover = {
       leaderboard: payload.leaderboard,
@@ -612,6 +617,10 @@ socket.on("room:gameover", (payload) => {
   };
 });
 
+socket.on("room:showScoreboard", (payload) => {
+  renderFinal(payload);
+});
+
 socket.on("room:reset", () => {
   finalPanel.classList.add("hidden");
   joinPanel.classList.add("hidden");
@@ -620,6 +629,9 @@ socket.on("room:reset", () => {
 
 viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
-  renderFinal(pendingGameover);
+  socket.emit("room:showScoreboard", {
+    roomCode: currentRoom,
+    payload: pendingGameover,
+  });
   pendingGameover = null;
 });

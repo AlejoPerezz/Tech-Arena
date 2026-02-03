@@ -337,6 +337,12 @@ io.on("connection", (socket) => {
     });
   });
 
+  socket.on("room:showScoreboard", ({ roomCode, payload }) => {
+    const roomState = rooms.get(roomCode);
+    if (!roomState || roomState.hostId !== socket.id) return;
+    io.to(roomState.roomCode).emit("room:showScoreboard", payload);
+  });
+
   socket.on("disconnect", () => {
     for (const [roomCode, roomState] of rooms.entries()) {
       if (!roomState.players.has(socket.id)) continue;
