@@ -159,6 +159,7 @@ const endRound = (roomState) => {
       playerId,
       optionId: answerId,
       optionLabel: option?.label ?? answerId,
+      optionTopics: option?.topics ?? [],
       points,
       outcome: option?.outcome ?? "",
       explanation: option?.explanation ?? "",
@@ -171,6 +172,7 @@ const endRound = (roomState) => {
       playerId,
       optionId: null,
       optionLabel: noAnswerLabel,
+      optionTopics: [],
       points: 0,
       outcome: noAnswerOutcome,
       explanation: noAnswerExplanation,
@@ -205,6 +207,8 @@ const endRound = (roomState) => {
       leaderboard: serializePlayers(roomState),
       roundsPlayed: roomState.currentRound + 1,
       maxRounds: roomState.maxRounds,
+      results,
+      correctOptionIds,
     });
   }
 };

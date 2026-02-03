@@ -20,6 +20,7 @@ const submitBtn = document.getElementById("submit-btn");
 const leaderboardEl = document.getElementById("leaderboard");
 const answersEl = document.getElementById("answers");
 const resultsEl = document.getElementById("results");
+const viewScoreboardBtn = document.getElementById("view-scoreboard-btn");
 const finalSummary = document.getElementById("final-summary");
 const finalLeaderboardEl = document.getElementById("final-leaderboard");
 const finalRecommendationsEl = document.getElementById("final-recommendations");
@@ -41,6 +42,7 @@ let currentUserId = null;
 let roundEndsAt = null;
 let lastScenario = null;
 let selectedOption = null;
+let pendingGameover = null;
 
 const translations = {
   en: {
@@ -60,6 +62,7 @@ const translations = {
     finalScoreboard: "Final scoreboard",
     finalRecommendations: "Personal recommendations",
     newSession: "New session",
+    viewScoreboard: "View final scoreboard",
     connecting: "Connecting to server...",
     missingJoin: "Please enter a room code and name.",
     correct: "Correct",
@@ -89,6 +92,7 @@ const translations = {
     finalScoreboard: "Marcador final",
     finalRecommendations: "Recomendaciones personales",
     newSession: "Nueva sesión",
+    viewScoreboard: "Ver marcador final",
     connecting: "Conectando al servidor...",
     missingJoin: "Ingresa un código de sala y tu nombre.",
     correct: "Correcta",
@@ -131,6 +135,7 @@ const applyTranslations = () => {
   finalTitle.textContent = t("finalScoreboard");
   finalRecommendationsTitle.textContent = t("finalRecommendations");
   restartBtn.textContent = t("newSession");
+  viewScoreboardBtn.textContent = t("viewScoreboard");
   leaderboardTitle.textContent = t("leaderboard");
   decisionsTitle.textContent = t("decisions");
 };
@@ -246,9 +251,26 @@ const renderResults = (payload) => {
   resultsPanel.classList.remove("hidden");
 };
 
-const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => {
+const getRecommendationsForScore = (
+  score,
+  roundsPlayed,
+  rank,
+  totalPlayers,
+  strengths,
+  weaknesses
+) => {
   const average = roundsPlayed ? score / roundsPlayed : 0;
   const percentile = totalPlayers ? (totalPlayers - rank) / totalPlayers : 0;
+  const extraTopics = [];
+  const strengthHint =
+    state.language === "es"
+      ? `Fortalezas: ${strengths.join(", ") || "Por determinar"}`
+      : `Strengths: ${strengths.join(", ") || "TBD"}`;
+  const weaknessHint =
+    state.language === "es"
+      ? `Enfoque: ${weaknesses.join(", ") || "Por determinar"}`
+      : `Focus: ${weaknesses.join(", ") || "TBD"}`;
+  extraTopics.push(strengthHint, weaknessHint);
   if (average >= 6) {
     return state.language === "es"
       ? [
@@ -256,12 +278,14 @@ const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => 
           "Patrones de escalabilidad y planificación de capacidad",
           "Ingeniería de confiabilidad avanzada (SLOs, presupuestos de error)",
           percentile > 0.66 ? "Mentoría técnica y coaching de equipos" : "Diseño de sistemas distribuidos",
+          ...extraTopics,
         ]
       : [
           "Incident management leadership and postmortems",
           "Scalability design patterns and capacity planning",
           "Advanced reliability engineering (SLOs, error budgets)",
           percentile > 0.66 ? "Technical mentoring and team coaching" : "Distributed systems design",
+          ...extraTopics,
         ];
   }
   if (average >= 3) {
@@ -271,12 +295,14 @@ const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => 
           "Indexación de base de datos y planes de consulta",
           "Buenas prácticas de CI/CD y despliegues seguros",
           percentile > 0.5 ? "Diseño de APIs resilientes" : "Fundamentos de observabilidad",
+          ...extraTopics,
         ]
       : [
           "Performance profiling and optimization basics",
           "Database indexing and query planning",
           "CI/CD best practices and safe deployments",
           percentile > 0.5 ? "Resilient API design" : "Observability fundamentals",
+          ...extraTopics,
         ];
   }
   return state.language === "es"
@@ -285,12 +311,14 @@ const getRecommendationsForScore = (score, roundsPlayed, rank, totalPlayers) => 
         "Observabilidad básica (logs, métricas, tracing)",
         "Parches de seguridad y gestión de dependencias",
         percentile > 0.33 ? "Bases de testing automatizado" : "Buenas prácticas de debugging",
+        ...extraTopics,
       ]
     : [
         "Production incident response fundamentals",
         "Observability basics (logs, metrics, tracing)",
         "Security patching and dependency management",
         percentile > 0.33 ? "Automated testing basics" : "Debugging best practices",
+        ...extraTopics,
       ];
 };
 
@@ -301,6 +329,21 @@ const renderFinal = (payload) => {
   finalLeaderboardEl.innerHTML = "";
   finalRecommendationsEl.innerHTML = "";
   const sorted = [...payload.leaderboard].sort((a, b) => b.score - a.score);
+  const topicStats = new Map();
+  if (payload.results) {
+    payload.results.forEach((result) => {
+      if (!result.optionTopics) return;
+      const playerStats = topicStats.get(result.playerId) ?? {};
+      result.optionTopics.forEach((topic) => {
+        playerStats[topic] = playerStats[topic] ?? { correct: 0, total: 0 };
+        playerStats[topic].total += 1;
+        if (payload.correctOptionIds?.includes(result.optionId)) {
+          playerStats[topic].correct += 1;
+        }
+      });
+      topicStats.set(result.playerId, playerStats);
+    });
+  }
   sorted.forEach((player, index) => {
       const item = document.createElement("li");
       item.innerHTML = `<span>${player.name}</span><strong>${player.score}</strong>`;
@@ -308,11 +351,19 @@ const renderFinal = (payload) => {
 
       const recommendation = document.createElement("div");
       recommendation.className = "recommendation-item";
+      const stats = topicStats.get(player.id) ?? {};
+      const topicsSorted = Object.entries(stats).sort(
+        (a, b) => a[1].correct / a[1].total - b[1].correct / b[1].total
+      );
+      const weaknesses = topicsSorted.slice(0, 2).map(([topic]) => topic);
+      const strengths = topicsSorted.slice(-2).map(([topic]) => topic);
       const topics = getRecommendationsForScore(
         player.score,
         payload.roundsPlayed,
         index + 1,
-        sorted.length
+        sorted.length,
+        strengths,
+        weaknesses
       );
       recommendation.innerHTML = `<strong>${player.name}</strong><ul>${topics
         .map((topic) => `<li>${topic}</li>`)
@@ -432,12 +483,16 @@ socket.on("room:state", (payload) => {
   renderScenario(payload.scenario);
   applyTranslations();
   setHostControls();
-  if (payload.gameOver) {
-    renderFinal({
+  if (payload.gameOver && !pendingGameover) {
+    pendingGameover = {
       leaderboard: payload.players,
       roundsPlayed: payload.currentRound + 1,
       maxRounds: payload.maxRounds,
-    });
+      results: [],
+      correctOptionIds: [],
+    };
+    viewScoreboardBtn.classList.remove("hidden");
+    viewScoreboardBtn.disabled = false;
   }
 });
 
@@ -474,9 +529,33 @@ socket.on("room:results", (payload) => {
       btn.classList.add("incorrect");
     }
   });
+  const isLastRound = payload.roundsPlayed === payload.maxRounds;
+  viewScoreboardBtn.classList.toggle("hidden", !isLastRound);
+  viewScoreboardBtn.disabled = !isLastRound;
+  if (isLastRound) {
+    pendingGameover = {
+      leaderboard: payload.leaderboard,
+      roundsPlayed: payload.roundsPlayed,
+      maxRounds: payload.maxRounds,
+      results: payload.results ?? [],
+      correctOptionIds: payload.correctOptionIds ?? [],
+    };
+  }
   state.selectedOption = null;
 });
 
 socket.on("room:gameover", (payload) => {
-  renderFinal(payload);
+  pendingGameover = {
+    leaderboard: payload.leaderboard,
+    roundsPlayed: payload.roundsPlayed,
+    maxRounds: payload.maxRounds,
+    results: payload.results ?? [],
+    correctOptionIds: payload.correctOptionIds ?? [],
+  };
+});
+
+viewScoreboardBtn.addEventListener("click", () => {
+  if (!pendingGameover) return;
+  renderFinal(pendingGameover);
+  pendingGameover = null;
 });
