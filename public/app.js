@@ -236,9 +236,6 @@ const getFriendlyExplanation = (text) => {
     .replace(/rollback/gi, "revert")
     .replace(/dependencies/gi, "libraries");
 };
-
-=======
->>>>>>> main
 const renderResults = (payload) => {
   resultsEl.innerHTML = "";
   const correctOptionIds = payload.correctOptionIds ?? [];
@@ -254,20 +251,17 @@ const renderResults = (payload) => {
     const correctAnswerText = correctOptions
       .map((option) => option.label)
       .join(", ");
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-c7sxj7
     const correctExplanation = getFriendlyExplanation(correctOptions[0]?.explanation ?? "");
     const chosenExplanation = getFriendlyExplanation(result.explanation);
     const whyChosenLabel = isCorrect ? t("whyCorrect") : t("whyIncorrect");
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
     )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${chosenExplanation}</p><p><strong>${t(
-=======
     const correctExplanation = correctOptions[0]?.explanation ?? "";
     const whyChosenLabel = isCorrect ? t("whyCorrect") : t("whyIncorrect");
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
     )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${result.explanation}</p><p><strong>${t(
->>>>>>> main
       "correctAnswer"
     )}:</strong> ${correctAnswerText}</p><p><strong>${t(
       "whyCorrect"
@@ -517,11 +511,8 @@ socket.on("room:state", (payload) => {
       results: [],
       correctOptionIds: [],
     };
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-c7sxj7
-=======
     viewScoreboardBtn.classList.remove("hidden");
     viewScoreboardBtn.disabled = false;
->>>>>>> main
   }
 });
 
