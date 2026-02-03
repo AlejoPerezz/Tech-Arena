@@ -12,8 +12,10 @@ const PORT = process.env.PORT || 3000;
 const MAX_PLAYERS = 10;
 const ROUND_SECONDS = 75;
 const MAX_ROUNDS = 5;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-1.5-flash";
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
+const OPENROUTER_SITE_URL = process.env.OPENROUTER_SITE_URL;
+const OPENROUTER_APP_NAME = process.env.OPENROUTER_APP_NAME || "tech-decision-simulator";
 
 const rootDir = path.resolve();
 const publicDir = path.join(rootDir, "public");
@@ -115,58 +117,61 @@ const buildScenarioForRoom = (scenario, language) => {
   };
 };
 
-const parseGeminiJson = (text) => {
+const parseOpenRouterJson = (text) => {
   if (!text) return null;
   try {
     return JSON.parse(text);
   } catch (error) {
-    console.warn("Failed to parse Gemini JSON:", error.message);
+    console.warn("Failed to parse OpenRouter JSON:", error.message);
     return null;
   }
 };
 
-const callGemini = async (prompt) => {
-  if (!GEMINI_API_KEY) return null;
+const callOpenRouter = async (prompt) => {
+  if (!OPENROUTER_API_KEY) return null;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.6,
-            responseMimeType: "application/json",
-          },
-        }),
-        signal: controller.signal,
-      }
-    );
+    const headers = {
+      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+      "Content-Type": "application/json",
+      "X-Title": OPENROUTER_APP_NAME,
+    };
+    if (OPENROUTER_SITE_URL) {
+      headers["HTTP-Referer"] = OPENROUTER_SITE_URL;
+    }
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: OPENROUTER_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.6,
+      }),
+      signal: controller.signal,
+    });
     if (!response.ok) {
       const errorText = await response.text();
-      console.warn("Gemini API error:", response.status, errorText);
+      console.warn("OpenRouter API error:", response.status, errorText);
       return null;
     }
     const data = await response.json();
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return parseGeminiJson(text);
+    const text = data?.choices?.[0]?.message?.content;
+    return parseOpenRouterJson(text);
   } catch (error) {
-    console.warn("Gemini request failed:", error.message);
+    console.warn("OpenRouter request failed:", error.message);
     return null;
   } finally {
     clearTimeout(timeoutId);
   }
 };
 
-const generateScenarioFromGemini = async (language) => {
+const generateScenarioFromOpenRouter = async (language) => {
   const prompt =
     language === "es"
       ? "Genera un escenario único para un juego de decisiones técnicas. Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
       : "Generate one unique scenario for a tech decision game. Return ONLY JSON with keys: id (short slug), title, prompt, options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
-  const data = await callGemini(prompt);
+  const data = await callOpenRouter(prompt);
   if (!data || !data.title || !data.prompt || !Array.isArray(data.options)) return null;
   const options = data.options
     .filter((option) => option && option.id && option.label)
@@ -207,14 +212,14 @@ const computeTopicStats = (results, correctOptionIds) => {
   return topicStats;
 };
 
-const generateRecommendationsFromGemini = async (
+const generateRecommendationsFromOpenRouter = async (
   leaderboard,
   results,
   correctOptionIds,
   roundsPlayed,
   language
 ) => {
-  if (!GEMINI_API_KEY) return null;
+  if (!OPENROUTER_API_KEY) return null;
   const topicStats = computeTopicStats(results, correctOptionIds);
   const players = leaderboard
     .sort((a, b) => b.score - a.score)
@@ -240,7 +245,7 @@ const generateRecommendationsFromGemini = async (
     language === "es"
       ? `Genera recomendaciones personalizadas (4 a 6 puntos) para cada jugador en un juego de decisiones técnicas. Devuelve SOLO JSON con la clave recommendations: un arreglo con { playerId, items }. Usa español. Jugadores: ${JSON.stringify(players)}.`
       : `Generate personalized recommendations (4 to 6 bullet items) for each player in a tech decision game. Return ONLY JSON with key recommendations: an array of { playerId, items }. Use English. Players: ${JSON.stringify(players)}.`;
-  const data = await callGemini(prompt);
+  const data = await callOpenRouter(prompt);
   if (!data || !Array.isArray(data.recommendations)) return null;
   return data.recommendations
     .filter((rec) => rec && rec.playerId && Array.isArray(rec.items))
@@ -391,15 +396,15 @@ const startRound = async (roomState) => {
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
-  if (!GEMINI_API_KEY) {
+  if (!OPENROUTER_API_KEY) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
     io.to(roomState.roomCode).emit("room:error", {
-      message: "Missing GEMINI_API_KEY. Configure the server to generate scenarios.",
+      message: "Missing OPENROUTER_API_KEY. Configure the server to generate scenarios.",
     });
     return;
   }
-  const scenario = await generateScenarioFromGemini(roomState.language);
+  const scenario = await generateScenarioFromOpenRouter(roomState.language);
   if (!scenario) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
@@ -515,14 +520,14 @@ io.on("connection", (socket) => {
     const roomState = rooms.get(roomCode);
     if (!roomState || roomState.hostId !== socket.id) return;
     if (!roomState.finalResults) return;
-    if (!GEMINI_API_KEY) {
+    if (!OPENROUTER_API_KEY) {
       io.to(roomState.roomCode).emit("room:error", {
-        message: "Missing GEMINI_API_KEY. Configure the server to generate recommendations.",
+        message: "Missing OPENROUTER_API_KEY. Configure the server to generate recommendations.",
       });
       return;
     }
     if (!roomState.finalRecommendations) {
-      roomState.finalRecommendations = await generateRecommendationsFromGemini(
+      roomState.finalRecommendations = await generateRecommendationsFromOpenRouter(
         roomState.finalResults.leaderboard,
         roomState.finalResults.results,
         roomState.finalResults.correctOptionIds,
