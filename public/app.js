@@ -253,6 +253,13 @@ const renderResults = (payload) => {
     resultsPanel.classList.remove("hidden");
     return;
   }
+  answersEl.innerHTML = "";
+  payload.results.forEach((result) => {
+    const player = state.players.find((p) => p.id === result.playerId);
+    const answerItem = document.createElement("li");
+    answerItem.textContent = `${player?.name ?? "Player"}: ${result.optionLabel ?? t("noAnswer")}`;
+    answersEl.appendChild(answerItem);
+  });
   const resultsToShow = [currentResult];
   resultsToShow.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
@@ -500,8 +507,10 @@ socket.on("room:error", ({ message }) => {
 });
 
 socket.on("room:state", (payload) => {
-  joinPanel.classList.add("hidden");
-  roomPanel.classList.remove("hidden");
+  if (finalPanel.classList.contains("hidden")) {
+    joinPanel.classList.add("hidden");
+    roomPanel.classList.remove("hidden");
+  }
   roomTitle.textContent = `Room ${payload.roomCode}`;
   roomStatus.textContent = payload.inProgress ? t("roundInProgress") : t("waitingNext");
 
