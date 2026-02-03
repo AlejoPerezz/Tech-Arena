@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tech Decision Simulator</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top-bar">
+        <div class="brand">
+          <span class="logo">⚙️</span>
+          <div>
+            <h1>Tech Decision Simulator</h1>
+            <p>Compete, debate, and learn from production scenarios.</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="lang-en" class="ghost">EN</button>
+          <button id="lang-es" class="ghost">ES</button>
+        </div>
+      </header>
+
+      <main>
+        <section id="join-panel" class="panel">
+          <h2>Join a room</h2>
+          <p>Enter a room code and your name to start. The first player creates the room.</p>
+          <div class="form-row">
+            <input id="room-code" type="text" placeholder="Room code" />
+            <input id="player-name" type="text" placeholder="Your name" />
+          </div>
+          <button id="join-btn" class="primary">Join room</button>
+          <p id="join-error" class="error"></p>
+        </section>
+
+        <section id="room-panel" class="panel hidden">
+          <div class="room-header">
+            <div>
+              <h2 id="room-title">Room</h2>
+              <p id="room-status">Waiting for players...</p>
+            </div>
+            <div class="host-actions">
+              <button id="start-btn" class="primary">Start round</button>
+              <button id="next-btn" class="ghost">Next round</button>
+            </div>
+          </div>
+
+          <div class="grid">
+            <div class="card">
+              <h3 id="scenario-title">Scenario</h3>
+              <p id="scenario-prompt">Prompt</p>
+              <div id="pre-round" class="pre-round hidden">
+                <p>Waiting for the host to start the round...</p>
+              </div>
+              <div id="options" class="options"></div>
+              <div class="timer">
+                <div id="timer-bar" class="timer-bar"></div>
+                <span id="timer-text">--</span>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Leaderboard</h3>
+              <ul id="leaderboard" class="leaderboard"></ul>
+              <div class="answers">
+                <h4>Decisions</h4>
+                <ul id="answers"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="results-panel" class="panel hidden">
+          <h2>Round results</h2>
+          <div id="results"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
