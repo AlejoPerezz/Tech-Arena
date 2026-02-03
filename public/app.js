@@ -221,8 +221,6 @@ const renderAnswers = (answers) => {
     answersEl.appendChild(item);
   });
 };
-
-<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-c7sxj7
 const getFriendlyExplanation = (text) => {
   if (!text) return "";
   return text
