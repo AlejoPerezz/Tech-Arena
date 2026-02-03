@@ -68,7 +68,7 @@ const translations = {
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
     whyCorrect: "Why it was correct",
-    whyChosen: "Why your choice",
+    whyIncorrect: "Why it was incorrect",
     noAnswer: "No answer",
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
@@ -97,7 +97,7 @@ const translations = {
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
     whyCorrect: "Por qué fue correcta",
-    whyChosen: "Por qué elegiste esa",
+    whyIncorrect: "Por qué fue incorrecta",
     noAnswer: "Sin respuesta",
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
@@ -233,11 +233,10 @@ const renderResults = (payload) => {
       .map((option) => option.label)
       .join(", ");
     const correctExplanation = correctOptions[0]?.explanation ?? "";
+    const whyChosenLabel = isCorrect ? t("whyCorrect") : t("whyIncorrect");
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
-    )}:</strong> ${selectedLabel}</p><p><strong>${t(
-      "whyChosen"
-    )}:</strong> ${result.explanation}</p><p><strong>${t(
+    )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${result.explanation}</p><p><strong>${t(
       "correctAnswer"
     )}:</strong> ${correctAnswerText}</p><p><strong>${t(
       "whyCorrect"
