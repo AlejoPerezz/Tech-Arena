@@ -45,6 +45,7 @@ let lastScenario = null;
 let selectedOption = null;
 let pendingGameover = null;
 let currentPlayerName = null;
+let roundAnswers = new Map();
 
 const translations = {
   en: {
@@ -172,10 +173,12 @@ const renderPlayers = () => {
     });
 };
 
-const renderScenario = (scenario) => {
+const renderScenario = (scenario, roundChanged = false) => {
   lastScenario = scenario;
   optionsEl.innerHTML = "";
-  answersEl.innerHTML = "";
+  if (roundChanged) {
+    answersEl.innerHTML = "";
+  }
   if (state.inProgress) {
     resultsPanel.classList.add("hidden");
   }
@@ -514,6 +517,7 @@ socket.on("room:state", (payload) => {
   roomTitle.textContent = `Room ${payload.roomCode}`;
   roomStatus.textContent = payload.inProgress ? t("roundInProgress") : t("waitingNext");
 
+  const previousRound = state.currentRound;
   state.players = payload.players;
   state.hostId = payload.hostId;
   state.language = payload.language;
@@ -522,9 +526,13 @@ socket.on("room:state", (payload) => {
   state.gameOver = payload.gameOver;
   state.maxRounds = payload.maxRounds;
   roundEndsAt = payload.roundEndsAt;
+  const roundChanged = payload.currentRound !== previousRound;
+  if (roundChanged) {
+    roundAnswers = new Map();
+  }
 
   renderPlayers();
-  renderScenario(payload.scenario);
+  renderScenario(payload.scenario, roundChanged);
   applyTranslations();
   setHostControls();
   if (payload.gameOver && !pendingGameover) {
@@ -539,17 +547,20 @@ socket.on("room:state", (payload) => {
 });
 
 socket.on("room:answer", (answer) => {
-  if (!lastScenario) return;
   const player = state.players.find((p) => p.id === answer.playerId);
   const optionLabel =
-    lastScenario.options.find((option) => option.id === answer.optionId)?.label ??
+    lastScenario?.options.find((option) => option.id === answer.optionId)?.label ??
     answer.optionId;
-  const answers = Array.from(answersEl.querySelectorAll("li")).map((li) => ({
-    playerName: li.textContent.split(":")[0],
-    optionId: li.textContent.split(":")[1],
-  }));
-  answers.push({ playerName: player?.name ?? "Player", optionId: optionLabel });
-  renderAnswers(answers);
+  roundAnswers.set(answer.playerId, {
+    playerName: player?.name ?? "Player",
+    optionLabel,
+  });
+  answersEl.innerHTML = "";
+  Array.from(roundAnswers.values()).forEach((entry) => {
+    const item = document.createElement("li");
+    item.textContent = `${entry.playerName}: ${entry.optionLabel}`;
+    answersEl.appendChild(item);
+  });
 });
 
 socket.on("room:results", (payload) => {
