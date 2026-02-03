@@ -10,6 +10,10 @@ const joinTitle = document.querySelector("#join-panel h2");
 const joinSubtitle = document.querySelector("#join-panel p");
 const roomTitle = document.getElementById("room-title");
 const roomStatus = document.getElementById("room-status");
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+const playerNameDisplay = document.getElementById("player-name-display");
+=======
+>>>>>>> main
 const startBtn = document.getElementById("start-btn");
 const nextBtn = document.getElementById("next-btn");
 const scenarioTitle = document.getElementById("scenario-title");
@@ -43,6 +47,10 @@ let roundEndsAt = null;
 let lastScenario = null;
 let selectedOption = null;
 let pendingGameover = null;
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+let currentPlayerName = null;
+=======
+>>>>>>> main
 
 const translations = {
   en: {
@@ -67,6 +75,11 @@ const translations = {
     missingJoin: "Please enter a room code and name.",
     correct: "Correct",
     incorrect: "Incorrect",
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+    recommended: "Recommended",
+    lessEffective: "Less effective",
+=======
+>>>>>>> main
     correctAnswer: "Correct answer",
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
@@ -97,6 +110,11 @@ const translations = {
     missingJoin: "Ingresa un código de sala y tu nombre.",
     correct: "Correcta",
     incorrect: "Incorrecta",
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+    recommended: "Recomendada",
+    lessEffective: "Menos efectiva",
+=======
+>>>>>>> main
     correctAnswer: "Respuesta correcta",
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
@@ -240,13 +258,29 @@ const renderResults = (payload) => {
   resultsEl.innerHTML = "";
   const correctOptionIds = payload.correctOptionIds ?? [];
   const correctOptions = payload.correctOptions ?? [];
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+  const currentResult = payload.results.find(
+    (result) => result.playerId === currentUserId
+  );
+  if (!currentResult) {
+    resultsPanel.classList.remove("hidden");
+    return;
+  }
+  const resultsToShow = [currentResult];
+  resultsToShow.forEach((result) => {
+=======
   payload.results.forEach((result) => {
+>>>>>>> main
     const player = state.players.find((p) => p.id === result.playerId);
     const isCorrect = correctOptionIds.includes(result.optionId);
     const selectedLabel = result.optionLabel ?? result.optionId ?? t("noAnswer");
     const item = document.createElement("div");
     item.className = "results-item";
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+    const verdict = isCorrect ? t("recommended") : t("lessEffective");
+=======
     const verdict = isCorrect ? t("correct") : t("incorrect");
+>>>>>>> main
     const verdictClass = isCorrect ? "correct" : "incorrect";
     const correctAnswerText = correctOptions
       .map((option) => option.label)
@@ -414,6 +448,11 @@ const attemptJoin = () => {
   }
   joinError.textContent = "";
   currentRoom = roomCode;
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+  currentPlayerName = name;
+  playerNameDisplay.textContent = name ? `${name}` : "";
+=======
+>>>>>>> main
   if (!socket.connected) {
     joinError.textContent = t("connecting");
     socket.once("connect", () => {
@@ -536,8 +575,13 @@ socket.on("room:results", (payload) => {
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
   optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ibj1w9
+    btn.disabled = false;
+    btn.classList.remove("correct", "incorrect");
+=======
     btn.disabled = true;
     btn.classList.remove("selected", "correct", "incorrect");
+>>>>>>> main
     const optionId = btn.dataset.optionId;
     if (optionId && correctOptionIds.includes(optionId)) {
       btn.classList.add("correct");
