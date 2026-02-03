@@ -141,7 +141,7 @@ const applyTranslations = () => {
 };
 
 const updateTimer = () => {
-  if (!roundEndsAt) {
+  if (!roundEndsAt || !state.inProgress) {
     timerBar.style.width = "0%";
     timerText.textContent = "--";
     return;
@@ -392,7 +392,11 @@ const renderFinal = (payload) => {
 const setHostControls = () => {
   const isHost = currentUserId && currentUserId === state.hostId;
   const canStart = isHost && !state.inProgress && state.currentRound < 0;
-  const canNext = isHost && !state.inProgress && state.currentRound >= 0;
+  const canNext =
+    isHost &&
+    !state.inProgress &&
+    state.currentRound >= 0 &&
+    state.currentRound + 1 < state.maxRounds;
   startBtn.disabled = !canStart;
   nextBtn.disabled = !canNext;
   startBtn.classList.toggle("hidden", !canStart);
