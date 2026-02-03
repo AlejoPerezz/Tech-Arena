@@ -13,6 +13,7 @@ const scenarioTitle = document.getElementById("scenario-title");
 const scenarioPrompt = document.getElementById("scenario-prompt");
 const preRound = document.getElementById("pre-round");
 const optionsEl = document.getElementById("options");
+const submitBtn = document.getElementById("submit-btn");
 const leaderboardEl = document.getElementById("leaderboard");
 const answersEl = document.getElementById("answers");
 const resultsEl = document.getElementById("results");
@@ -33,6 +34,7 @@ const state = {
   language: "en",
   inProgress: false,
   currentRound: -1,
+  selectedOption: null,
 };
 
 const updateTimer = () => {
@@ -67,6 +69,9 @@ const renderScenario = (scenario) => {
   answersEl.innerHTML = "";
   resultsPanel.classList.add("hidden");
   preRound.classList.add("hidden");
+  submitBtn.classList.add("hidden");
+  submitBtn.disabled = true;
+  state.selectedOption = null;
 
   if (!scenario) {
     scenarioTitle.textContent = "Waiting for the next round...";
@@ -79,6 +84,7 @@ const renderScenario = (scenario) => {
 
   if (!state.inProgress) {
     preRound.classList.remove("hidden");
+    submitBtn.classList.add("hidden");
   }
 
   scenario.options.forEach((option) => {
@@ -88,11 +94,9 @@ const renderScenario = (scenario) => {
     button.addEventListener("click", () => {
       if (!state.inProgress) return;
       if (!currentRoom) return;
-      selectedOption = option.id;
-      socket.emit("player:answer", {
-        roomCode: currentRoom,
-        optionId: option.id,
-      });
+      state.selectedOption = option.id;
+      submitBtn.classList.remove("hidden");
+      submitBtn.disabled = false;
       document.querySelectorAll(".option-btn").forEach((btn) => {
         btn.classList.toggle("selected", btn === button);
       });
@@ -154,6 +158,15 @@ nextBtn.addEventListener("click", () => {
   socket.emit("room:next", { roomCode: currentRoom });
 });
 
+submitBtn.addEventListener("click", () => {
+  if (!currentRoom || !state.inProgress || !state.selectedOption) return;
+  socket.emit("player:answer", {
+    roomCode: currentRoom,
+    optionId: state.selectedOption,
+  });
+  submitBtn.disabled = true;
+});
+
 langEn.addEventListener("click", () => {
   if (!currentRoom) return;
   socket.emit("room:language", { roomCode: currentRoom, language: "en" });
@@ -208,5 +221,7 @@ socket.on("room:results", (payload) => {
   state.players = payload.leaderboard;
   renderPlayers();
   renderResults(payload);
-  selectedOption = null;
+  state.selectedOption = null;
+  submitBtn.classList.add("hidden");
+  submitBtn.disabled = true;
 });
