@@ -612,6 +612,12 @@ socket.on("room:gameover", (payload) => {
   };
 });
 
+socket.on("room:reset", () => {
+  finalPanel.classList.add("hidden");
+  joinPanel.classList.add("hidden");
+  roomPanel.classList.remove("hidden");
+});
+
 viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
   renderFinal(pendingGameover);

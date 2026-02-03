@@ -331,6 +331,10 @@ io.on("connection", (socket) => {
       roomState.scores.set(playerId, 0);
     }
     sendRoomState(roomState);
+    io.to(roomState.roomCode).emit("room:reset", {
+      roomCode: roomState.roomCode,
+      message: "reset",
+    });
   });
 
   socket.on("disconnect", () => {
