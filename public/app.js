@@ -165,6 +165,9 @@ submitBtn.addEventListener("click", () => {
     optionId: state.selectedOption,
   });
   submitBtn.disabled = true;
+  optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
+    btn.disabled = true;
+  });
 });
 
 langEn.addEventListener("click", () => {
@@ -209,11 +212,14 @@ socket.on("room:state", (payload) => {
 socket.on("room:answer", (answer) => {
   if (!lastScenario) return;
   const player = state.players.find((p) => p.id === answer.playerId);
+  const optionLabel =
+    lastScenario.options.find((option) => option.id === answer.optionId)?.label ??
+    answer.optionId;
   const answers = Array.from(answersEl.querySelectorAll("li")).map((li) => ({
     playerName: li.textContent.split(":")[0],
     optionId: li.textContent.split(":")[1],
   }));
-  answers.push({ playerName: player?.name ?? "Player", optionId: answer.optionId });
+  answers.push({ playerName: player?.name ?? "Player", optionId: optionLabel });
   renderAnswers(answers);
 });
 
@@ -224,4 +230,8 @@ socket.on("room:results", (payload) => {
   state.selectedOption = null;
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
+  optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
+    btn.disabled = false;
+    btn.classList.remove("selected");
+  });
 });
