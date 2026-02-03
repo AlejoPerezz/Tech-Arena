@@ -208,6 +208,31 @@ input {
   margin-bottom: 12px;
 }
 
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
+.badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge.correct {
+  background: rgba(88, 240, 182, 0.15);
+  color: #58f0b6;
+  border: 1px solid rgba(88, 240, 182, 0.4);
+}
+
+.badge.incorrect {
+  background: rgba(255, 122, 122, 0.15);
+  color: #ff7a7a;
+  border: 1px solid rgba(255, 122, 122, 0.4);
+}
+
+=======
+>>>>>>> main
 .room-header {
   display: flex;
   justify-content: space-between;
@@ -237,3 +262,25 @@ input {
 #restart-btn {
   margin-top: 16px;
 }
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
+
+.recommendations {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #29355c;
+}
+
+.recommendation-item {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(16, 26, 51, 0.7);
+  border: 1px solid #2c385f;
+}
+
+.recommendation-item ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+=======
+>>>>>>> main
