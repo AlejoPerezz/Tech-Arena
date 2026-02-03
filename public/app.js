@@ -30,8 +30,6 @@ const finalTitle = document.querySelector("#final-panel h2");
 const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
-const langEn = document.getElementById("lang-en");
-const langEs = document.getElementById("lang-es");
 const scenarioLabel = document.getElementById("scenario-title");
 const promptLabel = document.getElementById("scenario-prompt");
 const resultsTitle = document.querySelector("#results-panel h2");
@@ -117,7 +115,7 @@ const translations = {
 const state = {
   players: [],
   hostId: null,
-  language: "en",
+  language: "es",
   inProgress: false,
   currentRound: -1,
   selectedOption: null,
@@ -396,14 +394,19 @@ const renderFinal = (payload) => {
       );
       const weaknesses = topicsSorted.slice(0, 2).map(([topic]) => topic);
       const strengths = topicsSorted.slice(-2).map(([topic]) => topic);
-      const topics = getRecommendationsForScore(
-        player.score,
-        payload.roundsPlayed,
-        index + 1,
-        sorted.length,
-        strengths,
-        weaknesses
-      );
+      const aiRecommendations = payload.recommendations?.find(
+        (entry) => entry.playerId === player.id
+      )?.items;
+      const topics = Array.isArray(aiRecommendations) && aiRecommendations.length
+        ? aiRecommendations
+        : getRecommendationsForScore(
+            player.score,
+            payload.roundsPlayed,
+            index + 1,
+            sorted.length,
+            strengths,
+            weaknesses
+          );
       recommendation.innerHTML = `<strong>${player.name}</strong><ul>${topics
         .map((topic) => `<li>${topic}</li>`)
         .join("")}</ul>`;
@@ -492,16 +495,6 @@ restartBtn.addEventListener("click", () => {
   socket.emit("room:reset", { roomCode: currentRoom });
 });
 
-langEn.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "en" });
-});
-
-langEs.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "es" });
-});
-
 socket.on("connect", () => {
   currentUserId = socket.id;
   applyTranslations();
@@ -509,6 +502,10 @@ socket.on("connect", () => {
 });
 
 socket.on("room:error", ({ message }) => {
+  if (!roomPanel.classList.contains("hidden")) {
+    roomStatus.textContent = message;
+    return;
+  }
   joinError.textContent = message;
 });
 
@@ -631,7 +628,6 @@ viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
   socket.emit("room:showScoreboard", {
     roomCode: currentRoom,
-    payload: pendingGameover,
   });
   pendingGameover = null;
 });
