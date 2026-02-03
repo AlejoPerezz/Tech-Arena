@@ -30,8 +30,6 @@ const finalTitle = document.querySelector("#final-panel h2");
 const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
-const langEn = document.getElementById("lang-en");
-const langEs = document.getElementById("lang-es");
 const scenarioLabel = document.getElementById("scenario-title");
 const promptLabel = document.getElementById("scenario-prompt");
 const resultsTitle = document.querySelector("#results-panel h2");
@@ -117,7 +115,7 @@ const translations = {
 const state = {
   players: [],
   hostId: null,
-  language: "en",
+  language: "es",
   inProgress: false,
   currentRound: -1,
   selectedOption: null,
@@ -495,16 +493,6 @@ restartBtn.addEventListener("click", () => {
   joinPanel.classList.add("hidden");
   roomPanel.classList.remove("hidden");
   socket.emit("room:reset", { roomCode: currentRoom });
-});
-
-langEn.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "en" });
-});
-
-langEs.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "es" });
 });
 
 socket.on("connect", () => {

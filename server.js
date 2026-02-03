@@ -65,7 +65,7 @@ const createRoomState = (roomCode) => ({
   scores: new Map(),
   roundEndsAt: null,
   inProgress: false,
-  language: "en",
+  language: "es",
   scenarioOrder: [],
   scenarioIndex: -1,
   gameOver: false,
@@ -487,14 +487,6 @@ io.on("connection", (socket) => {
       endRound(roomState);
       sendRoomState(roomState);
     }
-  });
-
-  socket.on("room:language", ({ roomCode, language }) => {
-    const roomState = rooms.get(roomCode);
-    if (!roomState) return;
-    if (!language || !["en", "es"].includes(language)) return;
-    roomState.language = language;
-    sendRoomState(roomState);
   });
 
   socket.on("room:reset", ({ roomCode }) => {
