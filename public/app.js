@@ -163,7 +163,9 @@ const renderScenario = (scenario) => {
   lastScenario = scenario;
   optionsEl.innerHTML = "";
   answersEl.innerHTML = "";
-  resultsPanel.classList.add("hidden");
+  if (state.inProgress) {
+    resultsPanel.classList.add("hidden");
+  }
   finalPanel.classList.add("hidden");
   preRound.classList.add("hidden");
   submitBtn.classList.add("hidden");
@@ -220,9 +222,7 @@ const renderResults = (payload) => {
   payload.results.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
     const isCorrect = correctOptionIds.includes(result.optionId);
-    const selectedLabel =
-      lastScenario?.options.find((option) => option.id === result.optionId)?.label ??
-      result.optionId;
+    const selectedLabel = result.optionLabel ?? result.optionId;
     const item = document.createElement("div");
     item.className = "results-item";
     const verdict = isCorrect ? t("correct") : t("incorrect");

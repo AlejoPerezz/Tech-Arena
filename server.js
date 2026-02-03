@@ -147,6 +147,7 @@ const endRound = (roomState) => {
     results.push({
       playerId,
       optionId: answerId,
+      optionLabel: option?.label ?? answerId,
       points,
       outcome: option?.outcome ?? "",
       explanation: option?.explanation ?? "",
