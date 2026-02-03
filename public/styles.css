@@ -131,6 +131,15 @@ input {
   margin-top: 16px;
 }
 
+.pre-round {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(15, 20, 39, 0.9);
+  border: 1px dashed #3d4a73;
+  color: #c6d2ff;
+}
+
 .option-btn {
   width: 100%;
   text-align: left;

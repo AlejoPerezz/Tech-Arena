@@ -11,6 +11,7 @@ const startBtn = document.getElementById("start-btn");
 const nextBtn = document.getElementById("next-btn");
 const scenarioTitle = document.getElementById("scenario-title");
 const scenarioPrompt = document.getElementById("scenario-prompt");
+const preRound = document.getElementById("pre-round");
 const optionsEl = document.getElementById("options");
 const leaderboardEl = document.getElementById("leaderboard");
 const answersEl = document.getElementById("answers");
@@ -30,6 +31,8 @@ const state = {
   players: [],
   hostId: null,
   language: "en",
+  inProgress: false,
+  currentRound: -1,
 };
 
 const updateTimer = () => {
@@ -63,6 +66,7 @@ const renderScenario = (scenario) => {
   optionsEl.innerHTML = "";
   answersEl.innerHTML = "";
   resultsPanel.classList.add("hidden");
+  preRound.classList.add("hidden");
 
   if (!scenario) {
     scenarioTitle.textContent = "Waiting for the next round...";
@@ -73,11 +77,16 @@ const renderScenario = (scenario) => {
   scenarioTitle.textContent = scenario.title;
   scenarioPrompt.textContent = scenario.prompt;
 
+  if (!state.inProgress) {
+    preRound.classList.remove("hidden");
+  }
+
   scenario.options.forEach((option) => {
     const button = document.createElement("button");
     button.className = "option-btn";
     button.textContent = option.label;
     button.addEventListener("click", () => {
+      if (!state.inProgress) return;
       if (!currentRoom) return;
       selectedOption = option.id;
       socket.emit("player:answer", {
@@ -115,8 +124,12 @@ const renderResults = (payload) => {
 
 const setHostControls = () => {
   const isHost = currentUserId && currentUserId === state.hostId;
-  startBtn.disabled = !isHost;
-  nextBtn.disabled = !isHost;
+  const canStart = isHost && !state.inProgress && state.currentRound < 0;
+  const canNext = isHost && !state.inProgress && state.currentRound >= 0;
+  startBtn.disabled = !canStart;
+  nextBtn.disabled = !canNext;
+  startBtn.classList.toggle("hidden", !canStart);
+  nextBtn.classList.toggle("hidden", !canNext);
 };
 
 joinBtn.addEventListener("click", () => {
@@ -171,6 +184,8 @@ socket.on("room:state", (payload) => {
   state.players = payload.players;
   state.hostId = payload.hostId;
   state.language = payload.language;
+  state.inProgress = payload.inProgress;
+  state.currentRound = payload.currentRound;
   roundEndsAt = payload.roundEndsAt;
 
   renderPlayers();
