@@ -208,6 +208,7 @@ input {
   margin-bottom: 12px;
 }
 
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
 .badge {
   display: inline-flex;
   align-items: center;
@@ -230,6 +231,8 @@ input {
   border: 1px solid rgba(255, 122, 122, 0.4);
 }
 
+=======
+>>>>>>> main
 .room-header {
   display: flex;
   justify-content: space-between;
@@ -259,6 +262,7 @@ input {
 #restart-btn {
   margin-top: 16px;
 }
+<<<<<<< codex/design-tech-architecture-for-tech-decision-simulator-ia3qmq
 
 .recommendations {
   margin-top: 16px;
@@ -278,3 +282,5 @@ input {
   margin: 8px 0 0;
   padding-left: 18px;
 }
+=======
+>>>>>>> main
