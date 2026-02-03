@@ -153,19 +153,22 @@ const endRound = (roomState) => {
     });
   }
 
-  const optionPoints = scenario.locale[roomState.language].options.map((option) => ({
+  const optionDetails = scenario.locale[roomState.language].options.map((option) => ({
     id: option.id,
+    label: option.label,
     points: option.points,
+    outcome: option.outcome,
+    explanation: option.explanation,
   }));
-  const maxPoints = Math.max(...optionPoints.map((option) => option.points));
-  const correctOptionIds = optionPoints
-    .filter((option) => option.points === maxPoints)
-    .map((option) => option.id);
+  const maxPoints = Math.max(...optionDetails.map((option) => option.points));
+  const correctOptions = optionDetails.filter((option) => option.points === maxPoints);
+  const correctOptionIds = correctOptions.map((option) => option.id);
 
   io.to(roomState.roomCode).emit("room:results", {
     results,
     leaderboard: serializePlayers(roomState),
     correctOptionIds,
+    correctOptions,
   });
 
   roomState.answers.clear();

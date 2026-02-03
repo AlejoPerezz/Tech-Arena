@@ -6,6 +6,8 @@ const resultsPanel = document.getElementById("results-panel");
 const finalPanel = document.getElementById("final-panel");
 const joinBtn = document.getElementById("join-btn");
 const joinError = document.getElementById("join-error");
+const joinTitle = document.querySelector("#join-panel h2");
+const joinSubtitle = document.querySelector("#join-panel p");
 const roomTitle = document.getElementById("room-title");
 const roomStatus = document.getElementById("room-status");
 const startBtn = document.getElementById("start-btn");
@@ -22,16 +24,78 @@ const finalSummary = document.getElementById("final-summary");
 const finalLeaderboardEl = document.getElementById("final-leaderboard");
 const finalRecommendationsEl = document.getElementById("final-recommendations");
 const restartBtn = document.getElementById("restart-btn");
+const finalTitle = document.querySelector("#final-panel h2");
+const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
 const langEn = document.getElementById("lang-en");
 const langEs = document.getElementById("lang-es");
+const scenarioLabel = document.getElementById("scenario-title");
+const promptLabel = document.getElementById("scenario-prompt");
+const resultsTitle = document.querySelector("#results-panel h2");
+const leaderboardTitle = document.querySelector("#room-panel .card h3");
+const decisionsTitle = document.querySelector(".answers h4");
 
 let currentRoom = null;
 let currentUserId = null;
 let roundEndsAt = null;
 let lastScenario = null;
 let selectedOption = null;
+
+const translations = {
+  en: {
+    joinTitle: "Join a room",
+    joinSubtitle: "Enter a room code and your name to start. The first player creates the room.",
+    joinButton: "Join room",
+    startRound: "Start round",
+    nextRound: "Next round",
+    submitDecision: "Submit decision",
+    waitingHost: "Waiting for the host to start the round...",
+    waitingNext: "Waiting for next round",
+    roundInProgress: "Round in progress",
+    scenarioWaiting: "Waiting for the next round...",
+    leaderboard: "Leaderboard",
+    decisions: "Decisions",
+    roundResults: "Round results",
+    finalScoreboard: "Final scoreboard",
+    finalRecommendations: "Personal recommendations",
+    newSession: "New session",
+    connecting: "Connecting to server...",
+    missingJoin: "Please enter a room code and name.",
+    correct: "Correct",
+    incorrect: "Incorrect",
+    correctAnswer: "Correct answer",
+    chosenAnswer: "Chosen answer",
+    explanation: "Explanation",
+    roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
+  },
+  es: {
+    joinTitle: "Unirse a una sala",
+    joinSubtitle: "Ingresa un código de sala y tu nombre. El primer jugador crea la sala.",
+    joinButton: "Unirse",
+    startRound: "Iniciar ronda",
+    nextRound: "Siguiente ronda",
+    submitDecision: "Enviar decisión",
+    waitingHost: "Esperando a que el host inicie la ronda...",
+    waitingNext: "Esperando la siguiente ronda",
+    roundInProgress: "Ronda en progreso",
+    scenarioWaiting: "Esperando la próxima ronda...",
+    leaderboard: "Clasificación",
+    decisions: "Decisiones",
+    roundResults: "Resumen de ronda",
+    finalScoreboard: "Marcador final",
+    finalRecommendations: "Recomendaciones personales",
+    newSession: "Nueva sesión",
+    connecting: "Conectando al servidor...",
+    missingJoin: "Ingresa un código de sala y tu nombre.",
+    correct: "Correcta",
+    incorrect: "Incorrecta",
+    correctAnswer: "Respuesta correcta",
+    chosenAnswer: "Respuesta elegida",
+    explanation: "Explicación",
+    roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
+  },
+};
 
 const state = {
   players: [],
@@ -42,6 +106,27 @@ const state = {
   selectedOption: null,
   gameOver: false,
   maxRounds: 5,
+};
+
+const t = (key, ...args) => {
+  const value = translations[state.language]?.[key] ?? translations.en[key];
+  return typeof value === "function" ? value(...args) : value;
+};
+
+const applyTranslations = () => {
+  joinTitle.textContent = t("joinTitle");
+  joinSubtitle.textContent = t("joinSubtitle");
+  joinBtn.textContent = t("joinButton");
+  startBtn.textContent = t("startRound");
+  nextBtn.textContent = t("nextRound");
+  submitBtn.textContent = t("submitDecision");
+  preRound.querySelector("p").textContent = t("waitingHost");
+  resultsTitle.textContent = t("roundResults");
+  finalTitle.textContent = t("finalScoreboard");
+  finalRecommendationsTitle.textContent = t("finalRecommendations");
+  restartBtn.textContent = t("newSession");
+  leaderboardTitle.textContent = t("leaderboard");
+  decisionsTitle.textContent = t("decisions");
 };
 
 const updateTimer = () => {
@@ -82,13 +167,13 @@ const renderScenario = (scenario) => {
   state.selectedOption = null;
 
   if (!scenario) {
-    scenarioTitle.textContent = "Waiting for the next round...";
-    scenarioPrompt.textContent = "";
+    scenarioLabel.textContent = t("scenarioWaiting");
+    promptLabel.textContent = "";
     return;
   }
 
-  scenarioTitle.textContent = scenario.title;
-  scenarioPrompt.textContent = scenario.prompt;
+  scenarioLabel.textContent = scenario.title;
+  promptLabel.textContent = scenario.prompt;
 
   if (!state.inProgress) {
     preRound.classList.remove("hidden");
@@ -127,14 +212,28 @@ const renderAnswers = (answers) => {
 const renderResults = (payload) => {
   resultsEl.innerHTML = "";
   const correctOptionIds = payload.correctOptionIds ?? [];
+  const correctOptions = payload.correctOptions ?? [];
   payload.results.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
     const isCorrect = correctOptionIds.includes(result.optionId);
+    const selectedLabel =
+      lastScenario?.options.find((option) => option.id === result.optionId)?.label ??
+      result.optionId;
     const item = document.createElement("div");
     item.className = "results-item";
-    const verdict = isCorrect ? "Correct" : "Incorrect";
+    const verdict = isCorrect ? t("correct") : t("incorrect");
     const verdictClass = isCorrect ? "correct" : "incorrect";
-    item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p>${result.outcome}</p><p>${result.explanation}</p><p><strong>${result.points} pts</strong></p>`;
+    const correctAnswerText = correctOptions
+      .map((option) => option.label)
+      .join(", ");
+    const correctExplanation = correctOptions[0]?.explanation ?? "";
+    item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
+      "chosenAnswer"
+    )}:</strong> ${selectedLabel}</p><p><strong>${t(
+      "correctAnswer"
+    )}:</strong> ${correctAnswerText}</p><p><strong>${t(
+      "explanation"
+    )}:</strong> ${correctExplanation}</p><p>${result.outcome}</p><p>${result.explanation}</p><p><strong>${result.points} pts</strong></p>`;
     resultsEl.appendChild(item);
   });
   resultsPanel.classList.remove("hidden");
@@ -143,24 +242,42 @@ const renderResults = (payload) => {
 const getRecommendationsForScore = (score, roundsPlayed) => {
   const average = roundsPlayed ? score / roundsPlayed : 0;
   if (average >= 6) {
-    return [
-      "Incident management leadership and postmortems",
-      "Scalability design patterns and capacity planning",
-      "Advanced reliability engineering (SLOs, error budgets)",
-    ];
+    return state.language === "es"
+      ? [
+          "Liderazgo en incidentes y postmortems",
+          "Patrones de escalabilidad y planificación de capacidad",
+          "Ingeniería de confiabilidad avanzada (SLOs, presupuestos de error)",
+        ]
+      : [
+          "Incident management leadership and postmortems",
+          "Scalability design patterns and capacity planning",
+          "Advanced reliability engineering (SLOs, error budgets)",
+        ];
   }
   if (average >= 3) {
-    return [
-      "Performance profiling and optimization basics",
-      "Database indexing and query planning",
-      "CI/CD best practices and safe deployments",
-    ];
+    return state.language === "es"
+      ? [
+          "Profiling y optimización de rendimiento",
+          "Indexación de base de datos y planes de consulta",
+          "Buenas prácticas de CI/CD y despliegues seguros",
+        ]
+      : [
+          "Performance profiling and optimization basics",
+          "Database indexing and query planning",
+          "CI/CD best practices and safe deployments",
+        ];
   }
-  return [
-    "Production incident response fundamentals",
-    "Observability basics (logs, metrics, tracing)",
-    "Security patching and dependency management",
-  ];
+  return state.language === "es"
+    ? [
+        "Fundamentos de respuesta a incidentes en producción",
+        "Observabilidad básica (logs, métricas, tracing)",
+        "Parches de seguridad y gestión de dependencias",
+      ]
+    : [
+        "Production incident response fundamentals",
+        "Observability basics (logs, metrics, tracing)",
+        "Security patching and dependency management",
+      ];
 };
 
 const renderFinal = (payload) => {
@@ -181,7 +298,7 @@ const renderFinal = (payload) => {
         .join("")}</ul>`;
       finalRecommendationsEl.appendChild(recommendation);
     });
-  finalSummary.textContent = `Rounds played: ${payload.roundsPlayed} / ${payload.maxRounds}`;
+  finalSummary.textContent = t("roundsPlayed", payload.roundsPlayed, payload.maxRounds);
   finalPanel.classList.remove("hidden");
 };
 
@@ -201,13 +318,13 @@ const attemptJoin = () => {
   const roomCode = document.getElementById("room-code").value.trim();
   const name = document.getElementById("player-name").value.trim();
   if (!roomCode || !name) {
-    joinError.textContent = "Please enter a room code and name.";
+    joinError.textContent = t("missingJoin");
     return;
   }
   joinError.textContent = "";
   currentRoom = roomCode;
   if (!socket.connected) {
-    joinError.textContent = "Connecting to server...";
+    joinError.textContent = t("connecting");
     socket.once("connect", () => {
       joinError.textContent = "";
       socket.emit("room:join", { roomCode, name });
@@ -267,6 +384,7 @@ langEs.addEventListener("click", () => {
 
 socket.on("connect", () => {
   currentUserId = socket.id;
+  applyTranslations();
   setHostControls();
 });
 
@@ -278,9 +396,7 @@ socket.on("room:state", (payload) => {
   joinPanel.classList.add("hidden");
   roomPanel.classList.remove("hidden");
   roomTitle.textContent = `Room ${payload.roomCode}`;
-  roomStatus.textContent = payload.inProgress
-    ? "Round in progress"
-    : "Waiting for next round";
+  roomStatus.textContent = payload.inProgress ? t("roundInProgress") : t("waitingNext");
 
   state.players = payload.players;
   state.hostId = payload.hostId;
@@ -293,6 +409,7 @@ socket.on("room:state", (payload) => {
 
   renderPlayers();
   renderScenario(payload.scenario);
+  applyTranslations();
   setHostControls();
   if (payload.gameOver) {
     renderFinal({
