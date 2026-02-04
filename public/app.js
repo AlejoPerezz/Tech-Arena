@@ -135,7 +135,7 @@ const translations = {
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
     whyCorrect: "Por qué fue correcta",
-    whyIncorrect: "Por qué fue incorrecta",
+    whyIncorrect: "Por qué fue menos efectiva",
     noAnswer: "Sin respuesta",
     hint: "Obtener pista",
     hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
