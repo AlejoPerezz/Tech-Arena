@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 const MAX_PLAYERS = 10;
 const ROUND_SECONDS = 75;
 const MAX_ROUNDS = 5;
-const HINT_PENALTY = 1;
+const HINT_PENALTY = 3;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
 const OPENROUTER_SITE_URL = process.env.OPENROUTER_SITE_URL;
@@ -342,11 +342,20 @@ const endRound = (roomState) => {
     });
   }
 
+  const optionDetails = scenario.options.map((option) => ({
+    id: option.id,
+    label: option.label,
+    points: option.points,
+    outcome: option.outcome,
+    explanation: option.explanation,
+  }));
+  const minPoints = Math.min(...optionDetails.map((option) => option.points));
+  const noAnswerPenalty = minPoints < 0 ? Math.abs(minPoints) : 0;
   for (const playerId of roomState.players.keys()) {
     if (roomState.answers.has(playerId)) continue;
     const hintUsed = roomState.hints.has(playerId);
     const hintPenalty = hintUsed ? HINT_PENALTY : 0;
-    const points = -hintPenalty;
+    const points = -(noAnswerPenalty + hintPenalty);
     const currentScore = roomState.scores.get(playerId) ?? 0;
     roomState.scores.set(playerId, currentScore + points);
     results.push({
@@ -361,14 +370,6 @@ const endRound = (roomState) => {
       explanation: noAnswerExplanation,
     });
   }
-
-  const optionDetails = scenario.options.map((option) => ({
-    id: option.id,
-    label: option.label,
-    points: option.points,
-    outcome: option.outcome,
-    explanation: option.explanation,
-  }));
   const maxPoints = Math.max(...optionDetails.map((option) => option.points));
   const correctOptions = optionDetails.filter((option) => option.points === maxPoints);
   const correctOptionIds = correctOptions.map((option) => option.id);

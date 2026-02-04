@@ -81,7 +81,7 @@ const translations = {
     whyIncorrect: "Why it was incorrect",
     noAnswer: "No answer",
     hint: "Get hint",
-    hintWarning: "Requesting a hint will subtract 1 point. Do you want to continue?",
+    hintWarning: "Requesting a hint will subtract 3 points. Do you want to continue?",
     hintLabel: "Hint",
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
@@ -116,7 +116,7 @@ const translations = {
     whyIncorrect: "Por qué fue incorrecta",
     noAnswer: "Sin respuesta",
     hint: "Obtener pista",
-    hintWarning: "Si solicitas una pista se te restará 1 punto. ¿Deseas continuar?",
+    hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
     hintLabel: "Pista",
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
@@ -450,6 +450,7 @@ const setHostControls = () => {
   nextBtn.disabled = !canNext;
   startBtn.classList.toggle("hidden", !canStart);
   nextBtn.classList.toggle("hidden", !canNext);
+  nextLoader.classList.toggle("hidden", !nextRoundLoading || !isHost);
   restartBtn.classList.toggle("hidden", !isHost);
   restartBtn.disabled = !isHost;
 };
@@ -575,6 +576,8 @@ socket.on("room:state", (payload) => {
   }
   if (nextRoundLoading && payload.inProgress) {
     nextRoundLoading = false;
+  }
+  if (!nextRoundLoading) {
     nextLoader.classList.add("hidden");
   }
 
