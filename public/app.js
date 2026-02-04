@@ -685,6 +685,10 @@ socket.on("player:hint", ({ hint, penalty }) => {
   currentHintMessage = `${t("hintLabel")}: ${hint}${penaltyNote}`;
   hintText.textContent = currentHintMessage;
   hintText.classList.remove("hidden");
+<<<<<<< codex/integrate-gemini-api-for-questions-and-recommendations-0q5vvk
+  hintBtn.disabled = true;
+=======
+>>>>>>> main
 });
 
 socket.on("room:results", (payload) => {
