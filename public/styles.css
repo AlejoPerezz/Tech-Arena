@@ -309,6 +309,10 @@ input {
   z-index: 20;
 }
 
+.loading-overlay.hidden {
+  display: none;
+}
+
 .loading-card {
   display: flex;
   align-items: center;
