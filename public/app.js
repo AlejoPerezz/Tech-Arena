@@ -89,6 +89,7 @@ const translations = {
     incorrect: "Incorrect",
     recommended: "Recommended",
     lessEffective: "Less effective",
+    notRecommended: "Not recommended",
     correctAnswer: "Correct answer",
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
@@ -124,6 +125,7 @@ const translations = {
     incorrect: "Incorrecta",
     recommended: "Recomendada",
     lessEffective: "Menos efectiva",
+    notRecommended: "No recomendada",
     correctAnswer: "Respuesta correcta",
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
@@ -281,6 +283,12 @@ const renderResults = (payload) => {
   resultsEl.innerHTML = "";
   const correctOptionIds = payload.correctOptionIds ?? [];
   const correctOptions = payload.correctOptions ?? [];
+  const maxPoints = Number.isFinite(payload.maxPoints)
+    ? payload.maxPoints
+    : Math.max(...correctOptions.map((option) => option.points ?? 0), 0);
+  const minPoints = Number.isFinite(payload.minPoints)
+    ? payload.minPoints
+    : Math.min(0, ...payload.results.map((result) => result.points ?? 0));
   const currentResult = payload.results.find(
     (result) => result.playerId === currentUserId
   );
@@ -298,12 +306,18 @@ const renderResults = (payload) => {
   const resultsToShow = [currentResult];
   resultsToShow.forEach((result) => {
     const player = state.players.find((p) => p.id === result.playerId);
+    const isTopScore = result.points === maxPoints;
+    const isNotRecommended = result.points <= minPoints;
     const isCorrect = correctOptionIds.includes(result.optionId);
     const selectedLabel = result.optionLabel ?? result.optionId ?? t("noAnswer");
     const item = document.createElement("div");
     item.className = "results-item";
-    const verdict = isCorrect ? t("recommended") : t("lessEffective");
-    const verdictClass = isCorrect ? "correct" : "incorrect";
+    const verdict = isNotRecommended
+      ? t("notRecommended")
+      : isCorrect
+        ? t("recommended")
+        : t("lessEffective");
+    const verdictClass = isNotRecommended ? "not-recommended" : isCorrect ? "correct" : "incorrect";
     const correctAnswerText = correctOptions
       .map((option) => option.label)
       .join(", ");
@@ -627,12 +641,12 @@ socket.on("room:answer", (answer) => {
     playerName: player?.name ?? "Player",
     optionLabel,
   });
-  answersEl.innerHTML = "";
-  Array.from(roundAnswers.values()).forEach((entry) => {
-    const item = document.createElement("li");
-    item.textContent = `${entry.playerName}: ${entry.optionLabel}`;
-    answersEl.appendChild(item);
-  });
+});
+
+socket.on("player:hint", ({ hint }) => {
+  if (!hint) return;
+  hintText.textContent = `${t("hintLabel")}: ${hint}`;
+  hintText.classList.remove("hidden");
 });
 
 socket.on("player:hint", ({ hint }) => {

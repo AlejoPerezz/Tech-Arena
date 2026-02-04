@@ -243,6 +243,12 @@ input {
   border: 1px solid rgba(255, 122, 122, 0.4);
 }
 
+.badge.not-recommended {
+  background: rgba(255, 170, 77, 0.15);
+  color: #ffad5c;
+  border: 1px solid rgba(255, 170, 77, 0.45);
+}
+
 .room-header {
   display: flex;
   justify-content: space-between;

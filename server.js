@@ -405,6 +405,8 @@ const endRound = (roomState) => {
     leaderboard: serializePlayers(roomState),
     correctOptionIds,
     correctOptions,
+    minPoints,
+    maxPoints,
     roundsPlayed: roomState.currentRound + 1,
     maxRounds: roomState.maxRounds,
   });
