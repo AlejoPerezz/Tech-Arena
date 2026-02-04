@@ -8,6 +8,12 @@
   </head>
   <body>
     <div class="app">
+      <div id="round-loading-overlay" class="loading-overlay hidden" aria-live="polite">
+        <div class="loading-card">
+          <span class="spinner" aria-hidden="true"></span>
+          <p>Cargando ronda...</p>
+        </div>
+      </div>
       <header class="top-bar">
         <div class="brand">
           <span class="logo">⚙️</span>
@@ -40,10 +46,6 @@
             <div class="host-actions">
               <button id="start-btn" class="primary">Iniciar ronda</button>
               <button id="next-btn" class="ghost">Siguiente ronda</button>
-              <div id="next-loader" class="loader hidden" aria-live="polite">
-                <span class="spinner" aria-hidden="true"></span>
-                <span>Cargando ronda...</span>
-              </div>
             </div>
           </div>
 

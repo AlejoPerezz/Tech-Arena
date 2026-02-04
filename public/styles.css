@@ -15,6 +15,10 @@ body {
   background: radial-gradient(circle at top, #1f2a4a, #0b0f1d 60%);
 }
 
+.is-loading {
+  overflow: hidden;
+}
+
 .app {
   max-width: 1100px;
   margin: 0 auto;
@@ -294,21 +298,32 @@ input {
   padding-left: 18px;
 }
 
-.loader {
-  display: inline-flex;
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(12, 17, 37, 0.9);
+  justify-content: center;
+  background: rgba(5, 8, 20, 0.78);
+  backdrop-filter: blur(4px);
+  z-index: 20;
+}
+
+.loading-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 22px;
+  border-radius: 16px;
+  background: rgba(12, 17, 37, 0.95);
   border: 1px solid #29355c;
-  color: #c6d2ff;
-  font-size: 0.85rem;
+  color: #e6ecff;
+  font-weight: 600;
 }
 
 .spinner {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   border: 2px solid rgba(198, 210, 255, 0.3);
   border-top-color: #7ad7ff;

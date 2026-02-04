@@ -32,7 +32,7 @@ const finalTitle = document.querySelector("#final-panel h2");
 const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
-const nextLoader = document.getElementById("next-loader");
+const loadingOverlay = document.getElementById("round-loading-overlay");
 const scenarioLabel = document.getElementById("scenario-title");
 const promptLabel = document.getElementById("scenario-prompt");
 const resultsTitle = document.querySelector("#results-panel h2");
@@ -48,6 +48,13 @@ let pendingGameover = null;
 let currentPlayerName = null;
 let roundAnswers = new Map();
 let roundLoading = false;
+
+const setLoadingState = (isLoading) => {
+  roundLoading = isLoading;
+  loadingOverlay.classList.toggle("hidden", !isLoading);
+  document.body.classList.toggle("is-loading", isLoading);
+  setHostControls();
+};
 
 const translations = {
   en: {
@@ -448,12 +455,12 @@ const setHostControls = () => {
     state.currentRound + 1 < state.maxRounds;
   startBtn.disabled = !canStart;
   nextBtn.disabled = !canNext;
-  startBtn.classList.toggle("hidden", !canStart);
-  nextBtn.classList.toggle("hidden", !canNext);
-  if (roundLoading && isHost) {
-    nextLoader.classList.remove("hidden");
+  if (roundLoading) {
+    startBtn.classList.add("hidden");
+    nextBtn.classList.add("hidden");
   } else {
-    nextLoader.classList.add("hidden");
+    startBtn.classList.toggle("hidden", !canStart);
+    nextBtn.classList.toggle("hidden", !canNext);
   }
   restartBtn.classList.toggle("hidden", !isHost);
   restartBtn.disabled = !isHost;
@@ -494,12 +501,7 @@ joinBtn.addEventListener("click", attemptJoin);
 
 startBtn.addEventListener("click", () => {
   if (!currentRoom) return;
-  roundLoading = true;
-  startBtn.disabled = true;
-  nextBtn.disabled = true;
-  hintBtn.disabled = true;
-  submitBtn.disabled = true;
-  nextLoader.classList.remove("hidden");
+  setLoadingState(true);
   socket.emit("room:start", { roomCode: currentRoom });
 });
 
@@ -507,8 +509,7 @@ nextBtn.addEventListener("click", () => {
   if (!currentRoom) return;
   nextBtn.disabled = true;
   nextBtn.classList.add("hidden");
-  roundLoading = true;
-  nextLoader.classList.remove("hidden");
+  setLoadingState(true);
   socket.emit("room:next", { roomCode: currentRoom });
 });
 
@@ -547,9 +548,7 @@ socket.on("connect", () => {
 });
 
 socket.on("room:error", ({ message }) => {
-  roundLoading = false;
-  nextLoader.classList.add("hidden");
-  setHostControls();
+  setLoadingState(false);
   if (!roomPanel.classList.contains("hidden")) {
     roomStatus.textContent = message;
     return;
@@ -584,8 +583,7 @@ socket.on("room:state", (payload) => {
     hintText.classList.add("hidden");
   }
   if (roundLoading && payload.inProgress && payload.scenario) {
-    roundLoading = false;
-    nextLoader.classList.add("hidden");
+    setLoadingState(false);
   }
 
   renderPlayers();
