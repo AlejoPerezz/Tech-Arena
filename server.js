@@ -17,6 +17,8 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
 const OPENROUTER_SITE_URL = process.env.OPENROUTER_SITE_URL;
 const OPENROUTER_APP_NAME = process.env.OPENROUTER_APP_NAME || "tech-decision-simulator";
+const OPENROUTER_TIMEOUT_MS = Number(process.env.OPENROUTER_TIMEOUT_MS) || 45000;
+const OPENROUTER_MAX_RETRIES = Number(process.env.OPENROUTER_MAX_RETRIES) || 1;
 
 const rootDir = path.resolve();
 const publicDir = path.join(rootDir, "public");
@@ -123,6 +125,15 @@ const buildScenarioForRoom = (scenario, language) => {
   };
 };
 
+const getFallbackScenario = (roomState) => {
+  if (!ensureScenarioOrder(roomState)) return null;
+  const nextIndex = roomState.scenarioIndex + 1;
+  roomState.scenarioIndex =
+    nextIndex >= roomState.scenarioOrder.length ? 0 : nextIndex;
+  const fallbackScenario = getScenarioForRoom(roomState);
+  return buildScenarioForRoom(fallbackScenario, roomState.language);
+};
+
 const parseOpenRouterJson = (text) => {
   if (!text) return null;
   const cleaned = text
@@ -167,7 +178,7 @@ const callOpenRouter = async (prompt) => {
   });
   const attemptRequest = async () => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), OPENROUTER_TIMEOUT_MS);
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -187,21 +198,23 @@ const callOpenRouter = async (prompt) => {
       clearTimeout(timeoutId);
     }
   };
-  try {
-    return await attemptRequest();
-  } catch (error) {
-    if (error.name === "AbortError") {
-      console.warn("OpenRouter request timed out, retrying once.");
-      try {
-        return await attemptRequest();
-      } catch (retryError) {
-        console.warn("OpenRouter request failed:", retryError.message);
+  for (let attempt = 0; attempt <= OPENROUTER_MAX_RETRIES; attempt += 1) {
+    try {
+      return await attemptRequest();
+    } catch (error) {
+      if (error.name === "AbortError") {
+        if (attempt < OPENROUTER_MAX_RETRIES) {
+          console.warn("OpenRouter request timed out, retrying.");
+          continue;
+        }
+        console.warn("OpenRouter request timed out after retries.");
         return null;
       }
+      console.warn("OpenRouter request failed:", error.message);
+      return null;
     }
-    console.warn("OpenRouter request failed:", error.message);
-    return null;
   }
+  return null;
 };
 
 const generateScenarioFromOpenRouter = async (language, history = []) => {
@@ -454,44 +467,45 @@ const startRound = async (roomState) => {
     return;
   }
   io.to(roomState.roomCode).emit("room:loading", { loading: true });
-  roomState.currentRound += 1;
-  roomState.inProgress = true;
-  roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
-  roomState.answers.clear();
-  roomState.hints.clear();
-  roomState.hintPenalties.clear();
-  if (!OPENROUTER_API_KEY) {
-    roomState.inProgress = false;
-    roomState.roundEndsAt = null;
-    io.to(roomState.roomCode).emit("room:loading", { loading: false });
-    io.to(roomState.roomCode).emit("room:error", {
-      message: "Missing OPENROUTER_API_KEY. Configure the server to generate scenarios.",
-    });
-    return;
-  }
-  const recentHistory = roomState.scenarioHistory ?? [];
-  const scenario = await generateScenarioFromOpenRouter(roomState.language, recentHistory);
-  if (!scenario) {
-    roomState.inProgress = false;
-    roomState.roundEndsAt = null;
-    io.to(roomState.roomCode).emit("room:loading", { loading: false });
-    io.to(roomState.roomCode).emit("room:error", {
-      message: "Failed to generate a scenario. Please try again.",
-    });
-    return;
-  }
-  roomState.currentScenario = scenario;
-  const scenarioSummary = `${scenario.title} - ${scenario.prompt}`;
-  roomState.scenarioHistory = [...recentHistory, scenarioSummary].slice(-3);
-  sendRoomState(roomState);
-  io.to(roomState.roomCode).emit("room:loading", { loading: false });
+  try {
+    roomState.currentRound += 1;
+    roomState.inProgress = true;
+    roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
+    roomState.answers.clear();
+    roomState.hints.clear();
+    roomState.hintPenalties.clear();
 
-  setTimeout(() => {
-    if (Date.now() >= roomState.roundEndsAt) {
-      endRound(roomState);
-      sendRoomState(roomState);
+    const recentHistory = roomState.scenarioHistory ?? [];
+    let scenario = null;
+    if (OPENROUTER_API_KEY) {
+      scenario = await generateScenarioFromOpenRouter(roomState.language, recentHistory);
     }
-  }, ROUND_SECONDS * 1000 + 200);
+    if (!scenario) {
+      scenario = getFallbackScenario(roomState);
+    }
+    if (!scenario) {
+      roomState.inProgress = false;
+      roomState.roundEndsAt = null;
+      io.to(roomState.roomCode).emit("room:error", {
+        message: "Failed to generate a scenario. Please try again.",
+      });
+      return;
+    }
+
+    roomState.currentScenario = scenario;
+    const scenarioSummary = `${scenario.title} - ${scenario.prompt}`;
+    roomState.scenarioHistory = [...recentHistory, scenarioSummary].slice(-3);
+    sendRoomState(roomState);
+
+    setTimeout(() => {
+      if (Date.now() >= roomState.roundEndsAt) {
+        endRound(roomState);
+        sendRoomState(roomState);
+      }
+    }, ROUND_SECONDS * 1000 + 200);
+  } finally {
+    io.to(roomState.roomCode).emit("room:loading", { loading: false });
+  }
 };
 
 io.on("connection", (socket) => {
