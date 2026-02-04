@@ -60,6 +60,7 @@ const shuffleArray = (items) => {
 const createRoomState = (roomCode) => ({
   roomCode,
   players: new Map(),
+  playerRegistry: new Map(),
   hostId: null,
   currentRound: -1,
   answers: new Map(),
@@ -488,10 +489,12 @@ const startRound = async (roomState) => {
 };
 
 io.on("connection", (socket) => {
-  socket.on("room:join", ({ roomCode, name }) => {
+  socket.on("room:join", ({ roomCode, name, token }) => {
     if (!roomCode || !name) return;
     const trimmedName = name.trim().slice(0, 24);
     if (!trimmedName) return;
+    const playerToken = token?.trim();
+    const registryKey = playerToken || trimmedName;
 
     let roomState = rooms.get(roomCode);
     if (!roomState) {
@@ -504,8 +507,28 @@ io.on("connection", (socket) => {
       return;
     }
 
-    roomState.players.set(socket.id, { id: socket.id, name: trimmedName });
-    roomState.scores.set(socket.id, roomState.scores.get(socket.id) ?? 0);
+    const existingEntry = roomState.playerRegistry.get(registryKey);
+    if (existingEntry?.id && roomState.players.has(existingEntry.id)) {
+      roomState.players.delete(existingEntry.id);
+      roomState.scores.delete(existingEntry.id);
+      roomState.answers.delete(existingEntry.id);
+      if (roomState.hostId === existingEntry.id) {
+        roomState.hostId = socket.id;
+      }
+    }
+
+    roomState.players.set(socket.id, {
+      id: socket.id,
+      name: trimmedName,
+      token: registryKey,
+    });
+    const restoredScore = existingEntry?.score ?? 0;
+    roomState.scores.set(socket.id, restoredScore);
+    roomState.playerRegistry.set(registryKey, {
+      id: socket.id,
+      name: trimmedName,
+      score: restoredScore,
+    });
 
     if (!roomState.hostId) {
       roomState.hostId = socket.id;
@@ -569,6 +592,7 @@ io.on("connection", (socket) => {
     roomState.gameOver = false;
     roomState.currentScenario = null;
     roomState.scenarioHistory = [];
+    roomState.playerRegistry.clear();
     roomState.finalResults = null;
     roomState.finalRecommendations = null;
     roomState.scenarioOrder = shuffleArray(
@@ -623,9 +647,19 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     for (const [roomCode, roomState] of rooms.entries()) {
       if (!roomState.players.has(socket.id)) continue;
+      const player = roomState.players.get(socket.id);
+      const score = roomState.scores.get(socket.id) ?? 0;
       roomState.players.delete(socket.id);
       roomState.scores.delete(socket.id);
       roomState.answers.delete(socket.id);
+      if (player?.token || player?.name) {
+        const registryKey = player.token ?? player.name;
+        roomState.playerRegistry.set(registryKey, {
+          id: null,
+          name: player.name,
+          score,
+        });
+      }
 
       if (roomState.hostId === socket.id) {
         const remainingPlayers = Array.from(roomState.players.keys());

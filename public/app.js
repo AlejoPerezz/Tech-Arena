@@ -50,6 +50,11 @@ let currentPlayerName = null;
 let roundAnswers = new Map();
 let roundLoading = false;
 let recommendationsLoading = false;
+const storedToken = localStorage.getItem("playerToken");
+const playerToken = storedToken ?? crypto.randomUUID();
+if (!storedToken) {
+  localStorage.setItem("playerToken", playerToken);
+}
 
 const setLoadingState = (isLoading) => {
   roundLoading = isLoading;
@@ -507,7 +512,7 @@ const attemptJoin = () => {
     });
     return;
   }
-  socket.emit("room:join", { roomCode, name });
+  socket.emit("room:join", { roomCode, name, token: playerToken });
 };
 
 joinBtn.addEventListener("click", attemptJoin);
