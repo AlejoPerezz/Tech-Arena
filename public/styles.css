@@ -238,6 +238,12 @@ input {
 }
 
 .badge.incorrect {
+  background: rgba(255, 170, 77, 0.15);
+  color: #ffad5c;
+  border: 1px solid rgba(255, 170, 77, 0.45);
+}
+
+.badge.not-recommended {
   background: rgba(255, 122, 122, 0.15);
   color: #ff7a7a;
   border: 1px solid rgba(255, 122, 122, 0.4);
