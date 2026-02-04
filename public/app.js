@@ -99,6 +99,7 @@ const translations = {
     chosenAnswer: "Chosen answer",
     explanation: "Explanation",
     whyCorrect: "Why it was correct",
+    whyLessEffective: "Why it was less effective",
     whyIncorrect: "Why it was incorrect",
     noAnswer: "No answer",
     hint: "Get hint",
@@ -135,7 +136,8 @@ const translations = {
     chosenAnswer: "Respuesta elegida",
     explanation: "Explicación",
     whyCorrect: "Por qué fue correcta",
-    whyIncorrect: "Por qué fue menos efectiva",
+    whyLessEffective: "Por qué fue menos efectiva",
+    whyIncorrect: "Por qué fue incorrecta",
     noAnswer: "Sin respuesta",
     hint: "Obtener pista",
     hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
@@ -328,7 +330,11 @@ const renderResults = (payload) => {
       .join(", ");
     const correctExplanation = getFriendlyExplanation(correctOptions[0]?.explanation ?? "");
     const chosenExplanation = getFriendlyExplanation(result.explanation);
-    const whyChosenLabel = isCorrect ? t("whyCorrect") : t("whyIncorrect");
+    const whyChosenLabel = isCorrect
+      ? t("whyCorrect")
+      : isNotRecommended
+        ? t("whyIncorrect")
+        : t("whyLessEffective");
     const hintNote = result.hintUsed
       ? `<p><strong>${t("hintLabel")}:</strong> -${result.hintPenalty ?? 1} pts</p>`
       : "";
