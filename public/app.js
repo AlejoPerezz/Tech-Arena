@@ -693,6 +693,11 @@ socket.on("room:reset", () => {
   roomPanel.classList.remove("hidden");
 });
 
+socket.on("room:hostChanged", ({ hostId }) => {
+  state.hostId = hostId;
+  setHostControls();
+});
+
 viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
   setRecommendationsLoading(true);

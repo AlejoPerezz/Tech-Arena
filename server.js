@@ -612,6 +612,11 @@ io.on("connection", (socket) => {
       if (roomState.hostId === socket.id) {
         const remainingPlayers = Array.from(roomState.players.keys());
         roomState.hostId = remainingPlayers[0] ?? null;
+        if (roomState.hostId) {
+          io.to(roomState.roomCode).emit("room:hostChanged", {
+            hostId: roomState.hostId,
+          });
+        }
       }
 
       if (roomState.players.size === 0) {
