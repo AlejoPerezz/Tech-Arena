@@ -472,6 +472,8 @@ startBtn.addEventListener("click", () => {
 
 nextBtn.addEventListener("click", () => {
   if (!currentRoom) return;
+  nextBtn.disabled = true;
+  nextBtn.classList.add("hidden");
   socket.emit("room:next", { roomCode: currentRoom });
 });
 

@@ -175,8 +175,8 @@ const callOpenRouter = async (prompt) => {
 const generateScenarioFromOpenRouter = async (language) => {
   const prompt =
     language === "es"
-      ? "Genera un escenario único para un juego de decisiones técnicas. Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
-      : "Generate one unique scenario for a tech decision game. Return ONLY JSON with keys: id (short slug), title, prompt, options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
+      ? "Genera un escenario único para un juego de decisiones técnicas enfocado en computadoras y programación (back-end, front-end, bases de datos, infraestructura, seguridad, rendimiento o depuración). Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
+      : "Generate one unique scenario for a tech decision game focused on computers and programming (back-end, front-end, databases, infrastructure, security, performance, or debugging). Return ONLY JSON with keys: id (short slug), title, prompt, options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
   const data = await callOpenRouter(prompt);
   if (!data || !data.title || !data.prompt || !Array.isArray(data.options)) return null;
   const options = data.options
