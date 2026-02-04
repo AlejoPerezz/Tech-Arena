@@ -550,6 +550,7 @@ submitBtn.addEventListener("click", () => {
     optionId: state.selectedOption,
   });
   submitBtn.disabled = true;
+  submitBtn.classList.add("hidden");
   optionsEl.querySelectorAll(".option-btn").forEach((btn) => {
     btn.disabled = true;
   });
