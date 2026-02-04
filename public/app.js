@@ -18,6 +18,8 @@ const scenarioPrompt = document.getElementById("scenario-prompt");
 const preRound = document.getElementById("pre-round");
 const optionsEl = document.getElementById("options");
 const submitBtn = document.getElementById("submit-btn");
+const hintBtn = document.getElementById("hint-btn");
+const hintText = document.getElementById("hint-text");
 const leaderboardEl = document.getElementById("leaderboard");
 const answersEl = document.getElementById("answers");
 const resultsEl = document.getElementById("results");
@@ -30,8 +32,7 @@ const finalTitle = document.querySelector("#final-panel h2");
 const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
-const langEn = document.getElementById("lang-en");
-const langEs = document.getElementById("lang-es");
+const nextLoader = document.getElementById("next-loader");
 const scenarioLabel = document.getElementById("scenario-title");
 const promptLabel = document.getElementById("scenario-prompt");
 const resultsTitle = document.querySelector("#results-panel h2");
@@ -46,6 +47,7 @@ let selectedOption = null;
 let pendingGameover = null;
 let currentPlayerName = null;
 let roundAnswers = new Map();
+let roundLoading = false;
 
 const translations = {
   en: {
@@ -78,6 +80,9 @@ const translations = {
     whyCorrect: "Why it was correct",
     whyIncorrect: "Why it was incorrect",
     noAnswer: "No answer",
+    hint: "Get hint",
+    hintWarning: "Requesting a hint will subtract 3 points. Do you want to continue?",
+    hintLabel: "Hint",
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
   es: {
@@ -110,6 +115,9 @@ const translations = {
     whyCorrect: "Por qué fue correcta",
     whyIncorrect: "Por qué fue incorrecta",
     noAnswer: "Sin respuesta",
+    hint: "Obtener pista",
+    hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
+    hintLabel: "Pista",
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
 };
@@ -117,7 +125,7 @@ const translations = {
 const state = {
   players: [],
   hostId: null,
-  language: "en",
+  language: "es",
   inProgress: false,
   currentRound: -1,
   selectedOption: null,
@@ -137,6 +145,7 @@ const applyTranslations = () => {
   startBtn.textContent = t("startRound");
   nextBtn.textContent = t("nextRound");
   submitBtn.textContent = t("submitDecision");
+  hintBtn.textContent = t("hint");
   preRound.querySelector("p").textContent = t("waitingHost");
   resultsTitle.textContent = t("roundResults");
   finalTitle.textContent = t("finalScoreboard");
@@ -186,6 +195,10 @@ const renderScenario = (scenario, roundChanged = false) => {
   preRound.classList.add("hidden");
   submitBtn.classList.add("hidden");
   submitBtn.disabled = true;
+  hintBtn.classList.add("hidden");
+  hintBtn.disabled = false;
+  hintText.textContent = "";
+  hintText.classList.add("hidden");
   state.selectedOption = null;
 
   if (!scenario) {
@@ -200,6 +213,10 @@ const renderScenario = (scenario, roundChanged = false) => {
   if (!state.inProgress) {
     preRound.classList.remove("hidden");
     submitBtn.classList.add("hidden");
+    hintBtn.classList.add("hidden");
+    hintText.classList.add("hidden");
+  } else {
+    hintBtn.classList.remove("hidden");
   }
 
   scenario.options.forEach((option) => {
@@ -278,9 +295,12 @@ const renderResults = (payload) => {
     const correctExplanation = getFriendlyExplanation(correctOptions[0]?.explanation ?? "");
     const chosenExplanation = getFriendlyExplanation(result.explanation);
     const whyChosenLabel = isCorrect ? t("whyCorrect") : t("whyIncorrect");
+    const hintNote = result.hintUsed
+      ? `<p><strong>${t("hintLabel")}:</strong> -${result.hintPenalty ?? 1} pts</p>`
+      : "";
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
-    )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${chosenExplanation}</p><p><strong>${t(
+    )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${chosenExplanation}</p>${hintNote}<p><strong>${t(
       "correctAnswer"
     )}:</strong> ${correctAnswerText}</p><p><strong>${t(
       "whyCorrect"
@@ -396,14 +416,19 @@ const renderFinal = (payload) => {
       );
       const weaknesses = topicsSorted.slice(0, 2).map(([topic]) => topic);
       const strengths = topicsSorted.slice(-2).map(([topic]) => topic);
-      const topics = getRecommendationsForScore(
-        player.score,
-        payload.roundsPlayed,
-        index + 1,
-        sorted.length,
-        strengths,
-        weaknesses
-      );
+      const aiRecommendations = payload.recommendations?.find(
+        (entry) => entry.playerId === player.id
+      )?.items;
+      const topics = Array.isArray(aiRecommendations) && aiRecommendations.length
+        ? aiRecommendations
+        : getRecommendationsForScore(
+            player.score,
+            payload.roundsPlayed,
+            index + 1,
+            sorted.length,
+            strengths,
+            weaknesses
+          );
       recommendation.innerHTML = `<strong>${player.name}</strong><ul>${topics
         .map((topic) => `<li>${topic}</li>`)
         .join("")}</ul>`;
@@ -425,6 +450,11 @@ const setHostControls = () => {
   nextBtn.disabled = !canNext;
   startBtn.classList.toggle("hidden", !canStart);
   nextBtn.classList.toggle("hidden", !canNext);
+  if (roundLoading && isHost) {
+    nextLoader.classList.remove("hidden");
+  } else {
+    nextLoader.classList.add("hidden");
+  }
   restartBtn.classList.toggle("hidden", !isHost);
   restartBtn.disabled = !isHost;
 };
@@ -464,12 +494,30 @@ joinBtn.addEventListener("click", attemptJoin);
 
 startBtn.addEventListener("click", () => {
   if (!currentRoom) return;
+  roundLoading = true;
+  startBtn.disabled = true;
+  nextBtn.disabled = true;
+  hintBtn.disabled = true;
+  submitBtn.disabled = true;
+  nextLoader.classList.remove("hidden");
   socket.emit("room:start", { roomCode: currentRoom });
 });
 
 nextBtn.addEventListener("click", () => {
   if (!currentRoom) return;
+  nextBtn.disabled = true;
+  nextBtn.classList.add("hidden");
+  roundLoading = true;
+  nextLoader.classList.remove("hidden");
   socket.emit("room:next", { roomCode: currentRoom });
+});
+
+hintBtn.addEventListener("click", () => {
+  if (!currentRoom || !state.inProgress || hintBtn.disabled) return;
+  const confirmed = window.confirm(t("hintWarning"));
+  if (!confirmed) return;
+  hintBtn.disabled = true;
+  socket.emit("player:hint", { roomCode: currentRoom });
 });
 
 submitBtn.addEventListener("click", () => {
@@ -492,16 +540,6 @@ restartBtn.addEventListener("click", () => {
   socket.emit("room:reset", { roomCode: currentRoom });
 });
 
-langEn.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "en" });
-});
-
-langEs.addEventListener("click", () => {
-  if (!currentRoom) return;
-  socket.emit("room:language", { roomCode: currentRoom, language: "es" });
-});
-
 socket.on("connect", () => {
   currentUserId = socket.id;
   applyTranslations();
@@ -509,6 +547,13 @@ socket.on("connect", () => {
 });
 
 socket.on("room:error", ({ message }) => {
+  roundLoading = false;
+  nextLoader.classList.add("hidden");
+  setHostControls();
+  if (!roomPanel.classList.contains("hidden")) {
+    roomStatus.textContent = message;
+    return;
+  }
   joinError.textContent = message;
 });
 
@@ -534,6 +579,13 @@ socket.on("room:state", (payload) => {
   const roundChanged = payload.currentRound !== previousRound;
   if (roundChanged) {
     roundAnswers = new Map();
+    hintBtn.disabled = false;
+    hintText.textContent = "";
+    hintText.classList.add("hidden");
+  }
+  if (roundLoading && payload.inProgress && payload.scenario) {
+    roundLoading = false;
+    nextLoader.classList.add("hidden");
   }
 
   renderPlayers();
@@ -566,6 +618,12 @@ socket.on("room:answer", (answer) => {
     item.textContent = `${entry.playerName}: ${entry.optionLabel}`;
     answersEl.appendChild(item);
   });
+});
+
+socket.on("player:hint", ({ hint }) => {
+  if (!hint) return;
+  hintText.textContent = `${t("hintLabel")}: ${hint}`;
+  hintText.classList.remove("hidden");
 });
 
 socket.on("room:results", (payload) => {
@@ -631,7 +689,6 @@ viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
   socket.emit("room:showScoreboard", {
     roomCode: currentRoom,
-    payload: pendingGameover,
   });
   pendingGameover = null;
 });
