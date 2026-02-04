@@ -257,6 +257,7 @@ const renderScenario = (scenario, roundChanged = false) => {
     if (currentHintMessage) {
       hintText.textContent = currentHintMessage;
       hintText.classList.remove("hidden");
+      hintBtn.disabled = true;
     }
   }
 
@@ -685,6 +686,7 @@ socket.on("player:hint", ({ hint, penalty }) => {
   currentHintMessage = `${t("hintLabel")}: ${hint}${penaltyNote}`;
   hintText.textContent = currentHintMessage;
   hintText.classList.remove("hidden");
+  hintBtn.disabled = true;
 });
 
 socket.on("room:results", (payload) => {
