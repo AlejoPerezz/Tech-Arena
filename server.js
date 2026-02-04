@@ -131,6 +131,16 @@ const parseOpenRouterJson = (text) => {
   try {
     return JSON.parse(cleaned);
   } catch (error) {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start !== -1 && end !== -1 && end > start) {
+      try {
+        return JSON.parse(cleaned.slice(start, end + 1));
+      } catch (innerError) {
+        console.warn("Failed to parse OpenRouter JSON:", innerError.message);
+        return null;
+      }
+    }
     console.warn("Failed to parse OpenRouter JSON:", error.message);
     return null;
   }
@@ -150,6 +160,7 @@ const callOpenRouter = async (prompt) => {
     model: OPENROUTER_MODEL,
     messages: [{ role: "user", content: prompt }],
     temperature: 0.6,
+    response_format: { type: "json_object" },
   });
   const attemptRequest = async () => {
     const controller = new AbortController();
