@@ -129,6 +129,12 @@ input {
   padding: 20px;
 }
 
+.round-counter {
+  margin: 6px 0 12px;
+  color: #9fb0ff;
+  font-size: 0.9rem;
+}
+
 .options {
   display: grid;
   gap: 12px;
@@ -170,6 +176,11 @@ input {
 }
 
 #submit-btn {
+  margin-top: 16px;
+  width: 100%;
+}
+
+#hint-btn {
   margin-top: 16px;
   width: 100%;
 }
@@ -221,6 +232,10 @@ input {
   margin-bottom: 12px;
 }
 
+.points-note {
+  color: #9fb0ff;
+}
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -270,6 +285,11 @@ input {
 
 .answers ul {
   margin-top: 8px;
+}
+
+#answers li {
+  margin-bottom: 8px;
+  line-height: 1.4;
 }
 
 #final-panel {

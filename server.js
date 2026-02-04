@@ -69,6 +69,7 @@ const createRoomState = (roomCode) => ({
   inProgress: false,
   language: "es",
   hints: new Set(),
+  hintPenalties: new Set(),
   scenarioOrder: [],
   scenarioIndex: -1,
   gameOver: false,
@@ -357,9 +358,11 @@ const endRound = (roomState) => {
     const basePoints = option?.points ?? 0;
     const hintUsed = roomState.hints.has(playerId);
     const hintPenalty = hintUsed ? HINT_PENALTY : 0;
+    const penaltyAlreadyApplied = hintUsed && roomState.hintPenalties.has(playerId);
     const points = basePoints - hintPenalty;
     const currentScore = roomState.scores.get(playerId) ?? 0;
-    roomState.scores.set(playerId, currentScore + points);
+    const scoreDelta = penaltyAlreadyApplied ? basePoints : points;
+    roomState.scores.set(playerId, currentScore + scoreDelta);
     results.push({
       playerId,
       optionId: answerId,
@@ -386,9 +389,11 @@ const endRound = (roomState) => {
     if (roomState.answers.has(playerId)) continue;
     const hintUsed = roomState.hints.has(playerId);
     const hintPenalty = hintUsed ? HINT_PENALTY : 0;
+    const penaltyAlreadyApplied = hintUsed && roomState.hintPenalties.has(playerId);
     const points = -(noAnswerPenalty + hintPenalty);
     const currentScore = roomState.scores.get(playerId) ?? 0;
-    roomState.scores.set(playerId, currentScore + points);
+    const scoreDelta = penaltyAlreadyApplied ? -noAnswerPenalty : points;
+    roomState.scores.set(playerId, currentScore + scoreDelta);
     results.push({
       playerId,
       optionId: null,
@@ -454,6 +459,7 @@ const startRound = async (roomState) => {
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
   roomState.hints.clear();
+  roomState.hintPenalties.clear();
   if (!OPENROUTER_API_KEY) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
@@ -556,10 +562,16 @@ io.on("connection", (socket) => {
     if (!roomState.currentScenario?.hint) return;
     if (roomState.hints.has(socket.id)) return;
     roomState.hints.add(socket.id);
+    if (!roomState.hintPenalties.has(socket.id)) {
+      const currentScore = roomState.scores.get(socket.id) ?? 0;
+      roomState.scores.set(socket.id, currentScore - HINT_PENALTY);
+      roomState.hintPenalties.add(socket.id);
+    }
     socket.emit("player:hint", {
       hint: roomState.currentScenario.hint,
       penalty: HINT_PENALTY,
     });
+    sendRoomState(roomState);
   });
 
   socket.on("player:answer", ({ roomCode, optionId }) => {
@@ -589,6 +601,7 @@ io.on("connection", (socket) => {
     roomState.roundEndsAt = null;
     roomState.answers.clear();
     roomState.hints.clear();
+    roomState.hintPenalties.clear();
     roomState.gameOver = false;
     roomState.currentScenario = null;
     roomState.scenarioHistory = [];

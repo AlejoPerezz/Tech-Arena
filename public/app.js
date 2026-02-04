@@ -15,6 +15,7 @@ const startBtn = document.getElementById("start-btn");
 const nextBtn = document.getElementById("next-btn");
 const scenarioTitle = document.getElementById("scenario-title");
 const scenarioPrompt = document.getElementById("scenario-prompt");
+const roundCounter = document.getElementById("round-counter");
 const preRound = document.getElementById("pre-round");
 const optionsEl = document.getElementById("options");
 const submitBtn = document.getElementById("submit-btn");
@@ -105,6 +106,9 @@ const translations = {
     hint: "Get hint",
     hintWarning: "Requesting a hint will subtract 3 points. Do you want to continue?",
     hintLabel: "Hint",
+    currentRound: (current, total) => `Round ${current}/${total}`,
+    pointsWon: (points) => `You earned ${points} points`,
+    pointsLost: (points) => `You lost ${points} points`,
     roundsPlayed: (played, total) => `Rounds played: ${played} / ${total}`,
   },
   es: {
@@ -142,6 +146,9 @@ const translations = {
     hint: "Obtener pista",
     hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
     hintLabel: "Pista",
+    currentRound: (current, total) => `Ronda ${current}/${total}`,
+    pointsWon: (points) => `Has ganado ${points} puntos`,
+    pointsLost: (points) => `Has perdido ${points} puntos`,
     roundsPlayed: (played, total) => `Rondas jugadas: ${played} / ${total}`,
   },
 };
@@ -338,13 +345,16 @@ const renderResults = (payload) => {
     const hintNote = result.hintUsed
       ? `<p><strong>${t("hintLabel")}:</strong> -${result.hintPenalty ?? 1} pts</p>`
       : "";
+    const pointsLabel =
+      result.points >= 0 ? t("pointsWon", result.points) : t("pointsLost", Math.abs(result.points));
+    const correctDetails = isCorrect
+      ? ""
+      : `<p><strong>${t("correctAnswer")}:</strong> ${correctAnswerText}</p><p><strong>${t(
+          "whyCorrect"
+        )}:</strong> ${correctExplanation}</p>`;
     item.innerHTML = `<strong>${player?.name ?? "Player"}</strong><span class="badge ${verdictClass}">${verdict}</span><p><strong>${t(
       "chosenAnswer"
-    )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${chosenExplanation}</p>${hintNote}<p><strong>${t(
-      "correctAnswer"
-    )}:</strong> ${correctAnswerText}</p><p><strong>${t(
-      "whyCorrect"
-    )}:</strong> ${correctExplanation}</p><p>${result.outcome}</p><p><strong>${result.points} pts</strong></p>`;
+    )}:</strong> ${selectedLabel}</p><p><strong>${whyChosenLabel}:</strong> ${chosenExplanation}</p>${hintNote}${correctDetails}<p>${result.outcome}</p><p><strong>${result.points} pts</strong> <span class="points-note">(${pointsLabel})</span></p>`;
     resultsEl.appendChild(item);
   });
   resultsPanel.classList.remove("hidden");
@@ -608,6 +618,10 @@ socket.on("room:state", (payload) => {
   }
   roomTitle.textContent = `Room ${payload.roomCode}`;
   roomStatus.textContent = payload.inProgress ? t("roundInProgress") : t("waitingNext");
+  roundCounter.textContent =
+    payload.currentRound >= 0
+      ? t("currentRound", payload.currentRound + 1, payload.maxRounds)
+      : "";
 
   const previousRound = state.currentRound;
   state.players = payload.players;
