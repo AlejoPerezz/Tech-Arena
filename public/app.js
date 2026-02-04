@@ -51,6 +51,7 @@ let currentPlayerName = null;
 let roundAnswers = new Map();
 let roundLoading = false;
 let recommendationsLoading = false;
+let currentHintMessage = "";
 const storedToken = localStorage.getItem("playerToken");
 const playerToken = storedToken ?? crypto.randomUUID();
 if (!storedToken) {
@@ -106,6 +107,7 @@ const translations = {
     hint: "Get hint",
     hintWarning: "Requesting a hint will subtract 3 points. Do you want to continue?",
     hintLabel: "Hint",
+    hintPenaltyMessage: (points) => `You lost ${points} points for the hint.`,
     currentRound: (current, total) => `Round ${current}/${total}`,
     pointsWon: (points) => `You earned ${points} points`,
     pointsLost: (points) => `You lost ${points} points`,
@@ -146,6 +148,7 @@ const translations = {
     hint: "Obtener pista",
     hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
     hintLabel: "Pista",
+    hintPenaltyMessage: (points) => `Se restaron ${points} puntos por la pista.`,
     currentRound: (current, total) => `Ronda ${current}/${total}`,
     pointsWon: (points) => `Has ganado ${points} puntos`,
     pointsLost: (points) => `Has perdido ${points} puntos`,
@@ -228,8 +231,11 @@ const renderScenario = (scenario, roundChanged = false) => {
   submitBtn.disabled = true;
   hintBtn.classList.add("hidden");
   hintBtn.disabled = false;
-  hintText.textContent = "";
-  hintText.classList.add("hidden");
+  if (roundChanged) {
+    hintText.textContent = "";
+    hintText.classList.add("hidden");
+    currentHintMessage = "";
+  }
   state.selectedOption = null;
 
   if (!scenario) {
@@ -248,6 +254,10 @@ const renderScenario = (scenario, roundChanged = false) => {
     hintText.classList.add("hidden");
   } else {
     hintBtn.classList.remove("hidden");
+    if (currentHintMessage) {
+      hintText.textContent = currentHintMessage;
+      hintText.classList.remove("hidden");
+    }
   }
 
   scenario.options.forEach((option) => {
@@ -669,9 +679,11 @@ socket.on("room:answer", (answer) => {
   });
 });
 
-socket.on("player:hint", ({ hint }) => {
+socket.on("player:hint", ({ hint, penalty }) => {
   if (!hint) return;
-  hintText.textContent = `${t("hintLabel")}: ${hint}`;
+  const penaltyNote = Number.isFinite(penalty) ? ` ${t("hintPenaltyMessage", penalty)}` : "";
+  currentHintMessage = `${t("hintLabel")}: ${hint}${penaltyNote}`;
+  hintText.textContent = currentHintMessage;
   hintText.classList.remove("hidden");
 });
 
