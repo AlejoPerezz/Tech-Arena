@@ -106,10 +106,6 @@ const translations = {
     hint: "Get hint",
     hintWarning: "Requesting a hint will subtract 3 points. Do you want to continue?",
     hintLabel: "Hint",
-<<<<<<< codex/integrate-gemini-api-for-questions-and-recommendations-uef8e5
-    hintPenaltyMessage: (points) => `You lost ${points} points for the hint.`,
-=======
->>>>>>> main
     currentRound: (current, total) => `Round ${current}/${total}`,
     pointsWon: (points) => `You earned ${points} points`,
     pointsLost: (points) => `You lost ${points} points`,
@@ -150,10 +146,6 @@ const translations = {
     hint: "Obtener pista",
     hintWarning: "Si solicitas una pista se te restará 3 puntos. ¿Deseas continuar?",
     hintLabel: "Pista",
-<<<<<<< codex/integrate-gemini-api-for-questions-and-recommendations-uef8e5
-    hintPenaltyMessage: (points) => `Se restaron ${points} puntos por la pista.`,
-=======
->>>>>>> main
     currentRound: (current, total) => `Ronda ${current}/${total}`,
     pointsWon: (points) => `Has ganado ${points} puntos`,
     pointsLost: (points) => `Has perdido ${points} puntos`,
@@ -236,15 +228,8 @@ const renderScenario = (scenario, roundChanged = false) => {
   submitBtn.disabled = true;
   hintBtn.classList.add("hidden");
   hintBtn.disabled = false;
-<<<<<<< codex/integrate-gemini-api-for-questions-and-recommendations-uef8e5
-  if (roundChanged) {
-    hintText.textContent = "";
-    hintText.classList.add("hidden");
-  }
-=======
   hintText.textContent = "";
   hintText.classList.add("hidden");
->>>>>>> main
   state.selectedOption = null;
 
   if (!scenario) {
@@ -684,16 +669,9 @@ socket.on("room:answer", (answer) => {
   });
 });
 
-<<<<<<< codex/integrate-gemini-api-for-questions-and-recommendations-uef8e5
-socket.on("player:hint", ({ hint, penalty }) => {
-  if (!hint) return;
-  const penaltyNote = Number.isFinite(penalty) ? ` ${t("hintPenaltyMessage", penalty)}` : "";
-  hintText.textContent = `${t("hintLabel")}: ${hint}${penaltyNote}`;
-=======
 socket.on("player:hint", ({ hint }) => {
   if (!hint) return;
   hintText.textContent = `${t("hintLabel")}: ${hint}`;
->>>>>>> main
   hintText.classList.remove("hidden");
 });
 
