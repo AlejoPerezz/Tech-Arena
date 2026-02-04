@@ -47,7 +47,7 @@ let selectedOption = null;
 let pendingGameover = null;
 let currentPlayerName = null;
 let roundAnswers = new Map();
-let nextRoundLoading = false;
+let roundLoading = false;
 
 const translations = {
   en: {
@@ -450,7 +450,11 @@ const setHostControls = () => {
   nextBtn.disabled = !canNext;
   startBtn.classList.toggle("hidden", !canStart);
   nextBtn.classList.toggle("hidden", !canNext);
-  nextLoader.classList.toggle("hidden", !nextRoundLoading || !isHost);
+  if (roundLoading && isHost) {
+    nextLoader.classList.remove("hidden");
+  } else {
+    nextLoader.classList.add("hidden");
+  }
   restartBtn.classList.toggle("hidden", !isHost);
   restartBtn.disabled = !isHost;
 };
@@ -490,6 +494,12 @@ joinBtn.addEventListener("click", attemptJoin);
 
 startBtn.addEventListener("click", () => {
   if (!currentRoom) return;
+  roundLoading = true;
+  startBtn.disabled = true;
+  nextBtn.disabled = true;
+  hintBtn.disabled = true;
+  submitBtn.disabled = true;
+  nextLoader.classList.remove("hidden");
   socket.emit("room:start", { roomCode: currentRoom });
 });
 
@@ -497,7 +507,7 @@ nextBtn.addEventListener("click", () => {
   if (!currentRoom) return;
   nextBtn.disabled = true;
   nextBtn.classList.add("hidden");
-  nextRoundLoading = true;
+  roundLoading = true;
   nextLoader.classList.remove("hidden");
   socket.emit("room:next", { roomCode: currentRoom });
 });
@@ -537,10 +547,9 @@ socket.on("connect", () => {
 });
 
 socket.on("room:error", ({ message }) => {
-  if (nextRoundLoading) {
-    nextRoundLoading = false;
-    nextLoader.classList.add("hidden");
-  }
+  roundLoading = false;
+  nextLoader.classList.add("hidden");
+  setHostControls();
   if (!roomPanel.classList.contains("hidden")) {
     roomStatus.textContent = message;
     return;
@@ -574,10 +583,8 @@ socket.on("room:state", (payload) => {
     hintText.textContent = "";
     hintText.classList.add("hidden");
   }
-  if (nextRoundLoading && payload.inProgress) {
-    nextRoundLoading = false;
-  }
-  if (!nextRoundLoading) {
+  if (roundLoading && payload.inProgress && payload.scenario) {
+    roundLoading = false;
     nextLoader.classList.add("hidden");
   }
 
