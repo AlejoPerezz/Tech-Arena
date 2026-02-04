@@ -138,40 +138,55 @@ const parseOpenRouterJson = (text) => {
 
 const callOpenRouter = async (prompt) => {
   if (!OPENROUTER_API_KEY) return null;
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  const headers = {
+    Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+    "Content-Type": "application/json",
+    "X-Title": OPENROUTER_APP_NAME,
+  };
+  if (OPENROUTER_SITE_URL) {
+    headers["HTTP-Referer"] = OPENROUTER_SITE_URL;
+  }
+  const requestBody = JSON.stringify({
+    model: OPENROUTER_MODEL,
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0.6,
+  });
+  const attemptRequest = async () => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers,
+        body: requestBody,
+        signal: controller.signal,
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn("OpenRouter API error:", response.status, errorText);
+        return null;
+      }
+      const data = await response.json();
+      const text = data?.choices?.[0]?.message?.content;
+      return parseOpenRouterJson(text);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
   try {
-    const headers = {
-      Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-      "Content-Type": "application/json",
-      "X-Title": OPENROUTER_APP_NAME,
-    };
-    if (OPENROUTER_SITE_URL) {
-      headers["HTTP-Referer"] = OPENROUTER_SITE_URL;
-    }
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: OPENROUTER_MODEL,
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.6,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.warn("OpenRouter API error:", response.status, errorText);
-      return null;
-    }
-    const data = await response.json();
-    const text = data?.choices?.[0]?.message?.content;
-    return parseOpenRouterJson(text);
+    return await attemptRequest();
   } catch (error) {
+    if (error.name === "AbortError") {
+      console.warn("OpenRouter request timed out, retrying once.");
+      try {
+        return await attemptRequest();
+      } catch (retryError) {
+        console.warn("OpenRouter request failed:", retryError.message);
+        return null;
+      }
+    }
     console.warn("OpenRouter request failed:", error.message);
     return null;
-  } finally {
-    clearTimeout(timeoutId);
   }
 };
 
