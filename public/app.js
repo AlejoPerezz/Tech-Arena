@@ -649,12 +649,6 @@ socket.on("player:hint", ({ hint }) => {
   hintText.classList.remove("hidden");
 });
 
-socket.on("player:hint", ({ hint }) => {
-  if (!hint) return;
-  hintText.textContent = `${t("hintLabel")}: ${hint}`;
-  hintText.classList.remove("hidden");
-});
-
 socket.on("room:results", (payload) => {
   state.players = payload.leaderboard;
   renderPlayers();

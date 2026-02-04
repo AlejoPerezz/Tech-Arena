@@ -73,6 +73,7 @@ const createRoomState = (roomCode) => ({
   gameOver: false,
   maxRounds: MAX_ROUNDS,
   currentScenario: null,
+  scenarioHistory: [],
   finalResults: null,
   finalRecommendations: null,
 });
@@ -201,11 +202,14 @@ const callOpenRouter = async (prompt) => {
   }
 };
 
-const generateScenarioFromOpenRouter = async (language) => {
+const generateScenarioFromOpenRouter = async (language, history = []) => {
+  const historyNote = history.length
+    ? `Evita repetir temas o estructuras de estos escenarios previos: ${history.join("; ")}.`
+    : "";
   const prompt =
     language === "es"
-      ? "Genera un escenario único y variado para un juego de decisiones técnicas, de nivel básico pero interesante, enfocado en: respuesta a incidentes, nuevos proyectos, decisiones de estructura/arquitectura, selección de frameworks o stacks, y buenas prácticas de mantenimiento. Evita preguntas consecutivas sobre el mismo tema y no hagas continuidad de una ronda a otra. Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, hint (una pista breve y específica, no genérica), options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
-      : "Generate one unique, varied scenario for a tech decision game, beginner-friendly but interesting, focused on: incident response, new projects, structure/architecture decisions, framework/stack selection, and maintenance best practices. Avoid consecutive questions on the same topic and do not build continuity across rounds. Return ONLY JSON with keys: id (short slug), title, prompt, hint (brief and specific, not generic), options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
+      ? `Genera un escenario único y variado para un juego de decisiones técnicas, de nivel básico pero interesante, enfocado en: respuesta a incidentes, nuevos proyectos, decisiones de estructura/arquitectura, selección de frameworks o stacks, y buenas prácticas de mantenimiento. Debe cambiar de área en cada ronda y no repetir el tema inmediatamente anterior. ${historyNote} Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, hint (una pista breve y específica, no genérica), options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español.`
+      : `Generate one unique, varied scenario for a tech decision game, beginner-friendly but interesting, focused on: incident response, new projects, structure/architecture decisions, framework/stack selection, and maintenance best practices. You must switch areas each round and avoid repeating the immediately previous topic. ${historyNote} Return ONLY JSON with keys: id (short slug), title, prompt, hint (brief and specific, not generic), options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.`;
   const data = await callOpenRouter(prompt);
   if (!data || !data.title || !data.prompt || !Array.isArray(data.options)) return null;
   const options = data.options
@@ -458,7 +462,8 @@ const startRound = async (roomState) => {
     });
     return;
   }
-  const scenario = await generateScenarioFromOpenRouter(roomState.language);
+  const recentHistory = roomState.scenarioHistory ?? [];
+  const scenario = await generateScenarioFromOpenRouter(roomState.language, recentHistory);
   if (!scenario) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
@@ -469,6 +474,8 @@ const startRound = async (roomState) => {
     return;
   }
   roomState.currentScenario = scenario;
+  const scenarioSummary = `${scenario.title} - ${scenario.prompt}`;
+  roomState.scenarioHistory = [...recentHistory, scenarioSummary].slice(-3);
   sendRoomState(roomState);
   io.to(roomState.roomCode).emit("room:loading", { loading: false });
 
@@ -561,6 +568,7 @@ io.on("connection", (socket) => {
     roomState.hints.clear();
     roomState.gameOver = false;
     roomState.currentScenario = null;
+    roomState.scenarioHistory = [];
     roomState.finalResults = null;
     roomState.finalRecommendations = null;
     roomState.scenarioOrder = shuffleArray(
