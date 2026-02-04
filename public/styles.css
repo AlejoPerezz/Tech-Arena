@@ -244,9 +244,9 @@ input {
 }
 
 .badge.not-recommended {
-  background: rgba(255, 122, 122, 0.15);
-  color: #ff7a7a;
-  border: 1px solid rgba(255, 122, 122, 0.4);
+  background: rgba(255, 91, 91, 0.18);
+  color: #ff5b5b;
+  border: 1px solid rgba(255, 91, 91, 0.5);
 }
 
 .room-header {
