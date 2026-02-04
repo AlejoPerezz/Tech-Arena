@@ -33,6 +33,7 @@ const finalRecommendationsTitle = document.querySelector("#final-panel h3");
 const timerBar = document.getElementById("timer-bar");
 const timerText = document.getElementById("timer-text");
 const loadingOverlay = document.getElementById("round-loading-overlay");
+const recommendationsOverlay = document.getElementById("recommendations-loading-overlay");
 const scenarioLabel = document.getElementById("scenario-title");
 const promptLabel = document.getElementById("scenario-prompt");
 const resultsTitle = document.querySelector("#results-panel h2");
@@ -48,12 +49,19 @@ let pendingGameover = null;
 let currentPlayerName = null;
 let roundAnswers = new Map();
 let roundLoading = false;
+let recommendationsLoading = false;
 
 const setLoadingState = (isLoading) => {
   roundLoading = isLoading;
   loadingOverlay.classList.toggle("hidden", !isLoading);
-  document.body.classList.toggle("is-loading", isLoading);
+  document.body.classList.toggle("is-loading", isLoading || recommendationsLoading);
   setHostControls();
+};
+
+const setRecommendationsLoading = (isLoading) => {
+  recommendationsLoading = isLoading;
+  recommendationsOverlay.classList.toggle("hidden", !isLoading);
+  document.body.classList.toggle("is-loading", isLoading || roundLoading);
 };
 
 const translations = {
@@ -549,6 +557,7 @@ socket.on("connect", () => {
 
 socket.on("room:error", ({ message }) => {
   setLoadingState(false);
+  setRecommendationsLoading(false);
   if (!roomPanel.classList.contains("hidden")) {
     roomStatus.textContent = message;
     return;
@@ -674,6 +683,7 @@ socket.on("room:gameover", (payload) => {
 });
 
 socket.on("room:showScoreboard", (payload) => {
+  setRecommendationsLoading(false);
   renderFinal(payload);
 });
 
@@ -685,6 +695,7 @@ socket.on("room:reset", () => {
 
 viewScoreboardBtn.addEventListener("click", () => {
   if (!pendingGameover) return;
+  setRecommendationsLoading(true);
   socket.emit("room:showScoreboard", {
     roomCode: currentRoom,
   });

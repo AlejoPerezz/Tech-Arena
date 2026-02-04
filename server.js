@@ -139,7 +139,7 @@ const parseOpenRouterJson = (text) => {
 const callOpenRouter = async (prompt) => {
   if (!OPENROUTER_API_KEY) return null;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
   try {
     const headers = {
       Authorization: `Bearer ${OPENROUTER_API_KEY}`,
