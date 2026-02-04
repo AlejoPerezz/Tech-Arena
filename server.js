@@ -441,6 +441,7 @@ const startRound = async (roomState) => {
     sendRoomState(roomState);
     return;
   }
+  io.to(roomState.roomCode).emit("room:loading", { loading: true });
   roomState.currentRound += 1;
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
@@ -449,6 +450,7 @@ const startRound = async (roomState) => {
   if (!OPENROUTER_API_KEY) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
+    io.to(roomState.roomCode).emit("room:loading", { loading: false });
     io.to(roomState.roomCode).emit("room:error", {
       message: "Missing OPENROUTER_API_KEY. Configure the server to generate scenarios.",
     });
@@ -458,6 +460,7 @@ const startRound = async (roomState) => {
   if (!scenario) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
+    io.to(roomState.roomCode).emit("room:loading", { loading: false });
     io.to(roomState.roomCode).emit("room:error", {
       message: "Failed to generate a scenario. Please try again.",
     });
@@ -465,6 +468,7 @@ const startRound = async (roomState) => {
   }
   roomState.currentScenario = scenario;
   sendRoomState(roomState);
+  io.to(roomState.roomCode).emit("room:loading", { loading: false });
 
   setTimeout(() => {
     if (Date.now() >= roomState.roundEndsAt) {
@@ -575,7 +579,9 @@ io.on("connection", (socket) => {
     const roomState = rooms.get(roomCode);
     if (!roomState || roomState.hostId !== socket.id) return;
     if (!roomState.finalResults) return;
+    io.to(roomState.roomCode).emit("room:recommendationsLoading", { loading: true });
     if (!OPENROUTER_API_KEY) {
+      io.to(roomState.roomCode).emit("room:recommendationsLoading", { loading: false });
       io.to(roomState.roomCode).emit("room:error", {
         message: "Missing OPENROUTER_API_KEY. Configure the server to generate recommendations.",
       });
@@ -591,6 +597,7 @@ io.on("connection", (socket) => {
       );
     }
     if (!roomState.finalRecommendations) {
+      io.to(roomState.roomCode).emit("room:recommendationsLoading", { loading: false });
       io.to(roomState.roomCode).emit("room:error", {
         message: "Failed to generate recommendations. Please try again.",
       });
@@ -600,6 +607,7 @@ io.on("connection", (socket) => {
       ...roomState.finalResults,
       recommendations: roomState.finalRecommendations,
     });
+    io.to(roomState.roomCode).emit("room:recommendationsLoading", { loading: false });
   });
 
   socket.on("disconnect", () => {

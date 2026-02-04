@@ -565,6 +565,14 @@ socket.on("room:error", ({ message }) => {
   joinError.textContent = message;
 });
 
+socket.on("room:loading", ({ loading }) => {
+  setLoadingState(loading);
+});
+
+socket.on("room:recommendationsLoading", ({ loading }) => {
+  setRecommendationsLoading(loading);
+});
+
 socket.on("room:state", (payload) => {
   if (finalPanel.classList.contains("hidden")) {
     joinPanel.classList.add("hidden");
