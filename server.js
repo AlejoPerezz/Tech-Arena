@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 const MAX_PLAYERS = 10;
 const ROUND_SECONDS = 75;
 const MAX_ROUNDS = 5;
+const HINT_PENALTY = 1;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || "openai/gpt-4o-mini";
 const OPENROUTER_SITE_URL = process.env.OPENROUTER_SITE_URL;
@@ -66,6 +67,7 @@ const createRoomState = (roomCode) => ({
   roundEndsAt: null,
   inProgress: false,
   language: "es",
+  hints: new Set(),
   scenarioOrder: [],
   scenarioIndex: -1,
   gameOver: false,
@@ -106,6 +108,7 @@ const buildScenarioForRoom = (scenario, language) => {
     id: scenario.id,
     title: locale.title,
     prompt: locale.prompt,
+    hint: locale.hint ?? "",
     options: locale.options.map((option) => ({
       id: option.id,
       label: option.label,
@@ -175,8 +178,8 @@ const callOpenRouter = async (prompt) => {
 const generateScenarioFromOpenRouter = async (language) => {
   const prompt =
     language === "es"
-      ? "Genera un escenario único para un juego de decisiones técnicas enfocado en computadoras y programación (back-end, front-end, bases de datos, infraestructura, seguridad, rendimiento o depuración). Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
-      : "Generate one unique scenario for a tech decision game focused on computers and programming (back-end, front-end, databases, infrastructure, security, performance, or debugging). Return ONLY JSON with keys: id (short slug), title, prompt, options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
+      ? "Genera un escenario único para un juego de decisiones técnicas enfocado en computadoras y programación, con nivel básico pero interesante (back-end, front-end, bases de datos, infraestructura, seguridad, rendimiento o depuración). Devuelve SOLO JSON con las claves: id (slug corto), title, prompt, hint (una pista breve), options (3 elementos). Cada opción debe tener id, label, points (entero entre -5 y 10), outcome (frase corta), explanation (una oración) y topics (2-3 temas). Responde en español."
+      : "Generate one unique scenario for a tech decision game focused on computers and programming, beginner-friendly but interesting (back-end, front-end, databases, infrastructure, security, performance, or debugging). Return ONLY JSON with keys: id (short slug), title, prompt, hint (short hint), options (3 items). Each option must include id, label, points (integer -5 to 10), outcome (short phrase), explanation (one sentence), and topics (2-3 topics). Respond in English.";
   const data = await callOpenRouter(prompt);
   if (!data || !data.title || !data.prompt || !Array.isArray(data.options)) return null;
   const options = data.options
@@ -197,6 +200,7 @@ const generateScenarioFromOpenRouter = async (language) => {
     id: data.id ? String(data.id) : `scenario-${Date.now()}`,
     title: String(data.title),
     prompt: String(data.prompt),
+    hint: data.hint ? String(data.hint) : "",
     options,
   };
 };
@@ -319,7 +323,10 @@ const endRound = (roomState) => {
 
   for (const [playerId, answerId] of roomState.answers.entries()) {
     const option = scenario.options.find((opt) => opt.id === answerId);
-    const points = option?.points ?? 0;
+    const basePoints = option?.points ?? 0;
+    const hintUsed = roomState.hints.has(playerId);
+    const hintPenalty = hintUsed ? HINT_PENALTY : 0;
+    const points = basePoints - hintPenalty;
     const currentScore = roomState.scores.get(playerId) ?? 0;
     roomState.scores.set(playerId, currentScore + points);
     results.push({
@@ -328,6 +335,8 @@ const endRound = (roomState) => {
       optionLabel: option?.label ?? answerId,
       optionTopics: option?.topics ?? [],
       points,
+      hintUsed,
+      hintPenalty,
       outcome: option?.outcome ?? "",
       explanation: option?.explanation ?? "",
     });
@@ -335,12 +344,19 @@ const endRound = (roomState) => {
 
   for (const playerId of roomState.players.keys()) {
     if (roomState.answers.has(playerId)) continue;
+    const hintUsed = roomState.hints.has(playerId);
+    const hintPenalty = hintUsed ? HINT_PENALTY : 0;
+    const points = -hintPenalty;
+    const currentScore = roomState.scores.get(playerId) ?? 0;
+    roomState.scores.set(playerId, currentScore + points);
     results.push({
       playerId,
       optionId: null,
       optionLabel: noAnswerLabel,
       optionTopics: [],
-      points: 0,
+      points,
+      hintUsed,
+      hintPenalty,
       outcome: noAnswerOutcome,
       explanation: noAnswerExplanation,
     });
@@ -402,6 +418,7 @@ const startRound = async (roomState) => {
   roomState.inProgress = true;
   roomState.roundEndsAt = Date.now() + ROUND_SECONDS * 1000;
   roomState.answers.clear();
+  roomState.hints.clear();
   if (!OPENROUTER_API_KEY) {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
@@ -470,6 +487,18 @@ io.on("connection", (socket) => {
     await startRound(roomState);
   });
 
+  socket.on("player:hint", ({ roomCode }) => {
+    const roomState = rooms.get(roomCode);
+    if (!roomState || !roomState.inProgress) return;
+    if (!roomState.currentScenario?.hint) return;
+    if (roomState.hints.has(socket.id)) return;
+    roomState.hints.add(socket.id);
+    socket.emit("player:hint", {
+      hint: roomState.currentScenario.hint,
+      penalty: HINT_PENALTY,
+    });
+  });
+
   socket.on("player:answer", ({ roomCode, optionId }) => {
     const roomState = rooms.get(roomCode);
     if (!roomState || !roomState.inProgress) return;
@@ -496,6 +525,7 @@ io.on("connection", (socket) => {
     roomState.inProgress = false;
     roomState.roundEndsAt = null;
     roomState.answers.clear();
+    roomState.hints.clear();
     roomState.gameOver = false;
     roomState.currentScenario = null;
     roomState.finalResults = null;

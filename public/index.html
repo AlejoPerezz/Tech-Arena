@@ -40,6 +40,10 @@
             <div class="host-actions">
               <button id="start-btn" class="primary">Iniciar ronda</button>
               <button id="next-btn" class="ghost">Siguiente ronda</button>
+              <div id="next-loader" class="loader hidden" aria-live="polite">
+                <span class="spinner" aria-hidden="true"></span>
+                <span>Cargando ronda...</span>
+              </div>
             </div>
           </div>
 
@@ -51,6 +55,8 @@
                 <p>Esperando a que el host inicie la ronda...</p>
               </div>
               <div id="options" class="options"></div>
+              <button id="hint-btn" class="ghost">Obtener pista</button>
+              <p id="hint-text" class="hint-text hidden"></p>
               <button id="submit-btn" class="primary">Enviar decisión</button>
               <div class="timer">
                 <div id="timer-bar" class="timer-bar"></div>
